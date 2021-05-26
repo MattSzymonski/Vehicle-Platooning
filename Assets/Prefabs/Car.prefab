@@ -26,7 +26,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3163854420955403258}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.8610841, y: 0, z: -0.0019480396}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_Children:
   - {fileID: 3163854421694993005}
@@ -54,7 +54,8 @@ MonoBehaviour:
     Value: {x: 0, y: 0, z: 0}
     HasValue: 0
   path:
-    nodes: []
+    nodes:
+    - {fileID: 0}
   target:
     Value: {x: 0, y: 0, z: 0}
     HasValue: 0
@@ -83,13 +84,14 @@ MonoBehaviour:
   agentPlatform: {fileID: 0}
   state: 0
   registeredInCentralAgent: 0
+  isInColumn: 0
+  isColumnLeader: 0
   currentColumnData:
     leaderName: 
     pathNodesNames: []
     followAgentName: 
     behindAgentName: 
   followingAgentTargetNodeName: 
-  isColumnLeader: 0
   columnCarsNames: []
   columnJoinRadius: 1
   reachDestinationRadius: 0.3
@@ -98,6 +100,7 @@ MonoBehaviour:
   catchUpColumnSpeed: 0.5
   catchUpColumnDistance: 0.15
   betweenCarDistances: 0.1
+  maxColumnSize: 5
   carAgentName: 
   carAgentPassword: 
   registeringInCentralAgent_Wait_Timeout: 1
@@ -105,12 +108,12 @@ MonoBehaviour:
   joiningColumn_Wait_Timeout: 1
   creatingColumn_Wait_Timeout: 1
   creatingColumnProposal_Wait_Timeout: 1
+  creatingColumnProposal_Wait_Timeout_Randomizer: 0
   creatingColumnConfirmation_Wait_Timeout: 1
   updateCarDataInCentralAgent_Timeout: 1
   updateCarBehind_Timeout: 0.5
   timeout: 1
   timer: 0
-  columnDebugMaterial: {fileID: 0}
 --- !u!1 &3163854421694993006
 GameObject:
   m_ObjectHideFlags: 0
@@ -122,6 +125,7 @@ GameObject:
   - component: {fileID: 3163854421694993005}
   - component: {fileID: 3163854421694993003}
   - component: {fileID: 3163854421694993004}
+  - component: {fileID: 7130144820187344914}
   m_Layer: 0
   m_Name: Model
   m_TagString: Untagged
@@ -137,7 +141,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3163854421694993006}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.5, z: 0}
+  m_LocalPosition: {x: 0, y: 0.4, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 3163854420955403253}
@@ -150,7 +154,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3163854421694993006}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 3613567641014311022, guid: 63530dc4ea4d2844b8ff1aa265e84152, type: 3}
 --- !u!23 &3163854421694993004
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -192,6 +196,24 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &7130144820187344914
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3163854421694993006}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 454e7eec5950c7f4fa89fd4ee4408df2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  laneRandomizationRange: {x: 0.6, y: 2}
+  laneRandomizationSmoothness: 3
+  baseLaneRandomization: 0
+  currentLaneRandomization: 0
+  rotationSmoothness: 4.5
+  columnLineDebugMaterial: {fileID: 2100000, guid: 4d65f8eb25904be4d8ec78bd9e26f10f, type: 2}
 --- !u!1 &7691041577071832051
 GameObject:
   m_ObjectHideFlags: 0

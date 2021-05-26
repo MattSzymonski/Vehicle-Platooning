@@ -250,6 +250,8 @@ public class CarAgent : MonoBehaviour
         Destroy(this.gameObject);
     }
 
+    // --- OTHER ---
+
     void DebugLog(string message)
     {
         if (Selection.Contains(gameObject))
@@ -257,4 +259,6 @@ public class CarAgent : MonoBehaviour
             Debug.Log("Car " + gameObject.name + ": " + message);
         }
     }
+
+
 }

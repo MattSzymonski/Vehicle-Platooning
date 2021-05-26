@@ -12,8 +12,8 @@ public enum CommunicationAgentState
     RegisteringInCentralAgent_Wait,
     ConnectingToCarAgent,
     InitialDataUpdateInCentralAgent,
-    CreatingColumnProposal_Wait,
-    CreatingColumnConfirmation_Wait,
+    CreateColumnProposal_Wait,
+    CreateColumnConfirmation_Wait,
     ColumnSearching_Send,
     ColumnSearching_Wait,
     JoiningColumn_Send,
@@ -34,12 +34,12 @@ public class CommunicationAgent : Agent
     [ReadOnly] public bool registeredInCentralAgent;
 
     [Header("Column Moving Info")]
+    [ReadOnly] public bool isInColumn;
+    [ReadOnly] public bool isColumnLeader;
     [ReadOnly] public ColumnData currentColumnData; // Data about the column in which car is moving (sent by CommunicationAgent of column leader car)
     [ReadOnly] public Vector3? target; // Data about target to which car should be moving to keep column formation (sent by CommunicationAgent of car in front)
     [ReadOnly] public string followingAgentTargetNodeName; // Next node on agent's that this agent follows path
-
-    //[ReadOnly] public ColumnQueryData columnCarData; // Data about current columns and lonely cars in proximity (sent by central agent)
-    [ReadOnly] public bool isColumnLeader;
+    
     [ReadOnly] public List<string> columnCarsNames; // Only for leader
 
     private CarAgent carAgent;
@@ -53,14 +53,13 @@ public class CommunicationAgent : Agent
     public float catchUpColumnSpeed = 0.4f; // Speed of car when it is further than catchUpColumnDistance from car it is following, if distance is smaller then column speed is used
     public float catchUpColumnDistance = 0.3f; 
     public float betweenCarDistances = 0.3f; // Distance from car in direction oposite to its driving direction (it should be similar to catchUpColumnDistance)
+    public int maxColumnSize = 5; // Maximal number of cars in column
 
     [HideInInspector] public string carAgentName = ""; // Entered via UI by user (mobile app or on car's cockpit screen)
     [HideInInspector] public string carAgentPassword = "";  // Entered via UI by user (mobile app or on car's cockpit screen)
 
     List<(string, int)> columnsInProximity; // Names of column leaders to join found when asking central agent, ordered on the stack from best to worst candidate in terms of most common nodes on the path (Name of leader and number of common points)
     List<string> lonelyCarsInProximity; // Names of communication agents not in columns found when asking central agent
-
-    //private Stack columnsInProximity; // Columns to join found when asking central agent, ordered on the stack from best to worst candidate (in terms of most common nodes on the path)
 
     [Header("Update Settings")]
     public float registeringInCentralAgent_Wait_Timeout = 3.0f;
@@ -76,11 +75,11 @@ public class CommunicationAgent : Agent
     float creatingColumn_Wait_Timer = 0.0f;
 
     public float creatingColumnProposal_Wait_Timeout = 3.0f;
+    public float creatingColumnProposal_Wait_Timeout_Randomizer = 0.0f;
     float creatingColumnProposal_Wait_Timer = 0.0f;
 
     public float creatingColumnConfirmation_Wait_Timeout = 3.0f;
     float creatingColumnConfirmation_Wait_Timer = 0.0f;
-
 
     public float updateCarDataInCentralAgent_Timeout = 3.0f;
     float updateCarDataInCentralAgent_Timer = 0.0f;
@@ -88,11 +87,12 @@ public class CommunicationAgent : Agent
     public float updateCarBehind_Timeout = 3.0f;
     float updateCarBehind_Timer = 0.0f;
 
+   
+
     public float timeout = 3.0f;
     public float timer = 0.0f;
 
-    LineRenderer lr;
-    [HideInInspector] public Material columnDebugMaterial;
+
 
     CommunicationAgentState[] setupStates = { 
         CommunicationAgentState.RegisteringInPlatform, 
@@ -111,12 +111,7 @@ public class CommunicationAgent : Agent
         columnsInProximity = new List<(string, int)>();
         lonelyCarsInProximity = new List<string>();
 
-        lr = gameObject.AddComponent<LineRenderer>();
-        lr.material = columnDebugMaterial;
-        lr.startWidth = 0.02f;
-        lr.endWidth = 0.02f;
-        lr.SetPosition(0, new Vector3(0, -10, 0));
-        lr.SetPosition(1, new Vector3(0, -10, 0));
+       
     }
 
     void Update() // Each frame
@@ -210,7 +205,7 @@ public class CommunicationAgent : Agent
         if (state == CommunicationAgentState.InitialDataUpdateInCentralAgent)
         {
             UpdateCarDataInCentralAgent();
-            state = CommunicationAgentState.CreatingColumnProposal_Wait;
+            state = CommunicationAgentState.CreateColumnProposal_Wait;
 
             return;
         }    
@@ -218,7 +213,7 @@ public class CommunicationAgent : Agent
         // --- Main states ---
 
         // Wait for column create proposals, accept or reject them
-        if (state == CommunicationAgentState.CreatingColumnProposal_Wait)
+        if (state == CommunicationAgentState.CreateColumnProposal_Wait)
         {
             if (message != null && receiveContent.action == SystemAction.CommunicationAgent_CreateColumn.ToString())
             {
@@ -253,7 +248,7 @@ public class CommunicationAgent : Agent
                     {
                         string content = Utils.CreateContent(SystemAction.CommunicationAgent_CreateColumn, "");
                         base.SendMessage(Peformative.Accept.ToString(), content, agentName, message.GetSender());
-                        state = CommunicationAgentState.CreatingColumnConfirmation_Wait;
+                        state = CommunicationAgentState.CreateColumnConfirmation_Wait;
                         creatingColumnProposal_Wait_Timer = 0;
                     }
                     else // Not same direction so reject proposal
@@ -267,11 +262,19 @@ public class CommunicationAgent : Agent
             }
             
             // Wait for some time for answers then try to find or create column
-            if (creatingColumnProposal_Wait_Timer >= creatingColumnProposal_Wait_Timeout)
+            
+
+
+            if (creatingColumnProposal_Wait_Timer >= creatingColumnProposal_Wait_Timeout + creatingColumnProposal_Wait_Timeout_Randomizer)
             {
                 DebugLog("Stop waiting for proposals");
                 state = CommunicationAgentState.ColumnSearching_Send;
                 creatingColumnProposal_Wait_Timer = 0;
+
+                // It may happen that multiple Communication Agents will fall into CreateColumnProposal_Wait-CreatingColumn_Send loop at the same time
+                // In such case they will never form a column because they will be asking each other and ignoring proposal messages
+                // So the job of this timer is to prevent such situation by randomly delaying CreatingColumnProposal_Wait
+                creatingColumnProposal_Wait_Timeout_Randomizer = (Random.Range(0, 1) == 1) ? 4.0f : 0.0f;
 
                 return;
             }
@@ -294,13 +297,14 @@ public class CommunicationAgent : Agent
         }
 
         // Wait for column create confirmations when proposal has been accepted
-        if (state == CommunicationAgentState.CreatingColumnConfirmation_Wait)
+        if (state == CommunicationAgentState.CreateColumnConfirmation_Wait)
         {
             if (message != null && receiveContent.action == SystemAction.CommunicationAgent_CreateColumn.ToString())
             {
                 if (message.GetPerformative() == Peformative.Confirm.ToString())
                 {
                     currentColumnData = JsonUtility.FromJson<ColumnData>(receiveContent.contentDetails); // Receive and store info about this column
+                    isInColumn = true;
                     state = CommunicationAgentState.MovingInColumn;
                     creatingColumnConfirmation_Wait_Timer = 0;
                         
@@ -357,18 +361,12 @@ public class CommunicationAgent : Agent
                             
                             List<string> path = carAgent.GetPathNodesNames();
                             string currentNode = carAgent.GetCurrentTargetNodeName();
-                            //int startIndex = path.IndexOf(currentNode) - 1;
-                           // int count = path.Count - startIndex;
-                          //  List<string> currentLeft = path.GetRange(startIndex, count); // Nodes which are left on the path (has not been reached yet) (and last visited node)
 
                             List<string> currentPath = path.GetRange(path.IndexOf(currentNode) - 1, path.Count - path.IndexOf(currentNode) + 1); // Nodes which are left on the path (has not been reached yet) (and last visited node)
                           
 
-
-
                             foreach (var agent in columnCarData.columnLeaderCommunicationAgents)
                             {
-                               // List<string> columnPathLeft = agent.pathNodesNames.GetRange(agent.pathNodesNames.IndexOf(agent.currentTargetNodeName) - 1, agent.pathNodesNames.Count - 1); // Nodes which are left on the path (has not been reached yet)
                                 List<string> currentColumnPath = agent.pathNodesNames.GetRange(agent.pathNodesNames.IndexOf(agent.currentTargetNodeName) - 1, agent.pathNodesNames.Count - agent.pathNodesNames.IndexOf(agent.currentTargetNodeName) + 1); // Nodes which are left on the path (has not been reached yet)
 
                                 // Calculate common points count in the same direction
@@ -419,7 +417,7 @@ public class CommunicationAgent : Agent
             if (columnSearching_Wait_Timer >= columnSearching_Wait_Timeout)
             {
                 DebugLog("No possibility to join");
-                state = CommunicationAgentState.CreatingColumnProposal_Wait;
+                state = CommunicationAgentState.CreateColumnProposal_Wait;
                 columnSearching_Wait_Timer = 0;
             }
             else
@@ -448,6 +446,7 @@ public class CommunicationAgent : Agent
                 if (message.GetPerformative() == Peformative.Accept.ToString()) // Join column
                 {
                     currentColumnData = JsonUtility.FromJson<ColumnData>(receiveContent.contentDetails); // Receive and store info about this column
+                    isInColumn = true;
                     columnsInProximity.Clear();
                     state = CommunicationAgentState.MovingInColumn;
 
@@ -461,7 +460,7 @@ public class CommunicationAgent : Agent
                     }
                     else
                     {
-                        state = CommunicationAgentState.CreatingColumnProposal_Wait;
+                        state = CommunicationAgentState.CreateColumnProposal_Wait;
                     }
 
                     joiningColumn_Wait_Timer = 0;
@@ -478,7 +477,7 @@ public class CommunicationAgent : Agent
                 }
                 else
                 {
-                    state = CommunicationAgentState.CreatingColumnProposal_Wait;
+                    state = CommunicationAgentState.CreateColumnProposal_Wait;
                 }
                 joiningColumn_Wait_Timer = 0;
                 return;
@@ -545,24 +544,8 @@ public class CommunicationAgent : Agent
                         columnCarsNames.Add(pendingAcceptingCars[i]);
                     }
 
-                    // Add new cars to column
-                    //foreach (var pendingAcceptingCar in pendingAcceptingCars)
-                    //{
-                    //    ColumnData columnData = new ColumnData()
-                    //    {
-                    //        leaderName = agentName,
-                    //        pathNodesNames = carAgent.GetPathNodesNames(),
-                    //        followAgentName = columnCarsNames[columnCarsNames.Count - 1], // Follow last car
-                    //        behindAgentName = ""  // Nothing is behind
-                    //    };
-
-                    //    string contentDetails = JsonUtility.ToJson(columnData);
-                    //    string content = Utils.CreateContent(SystemAction.CommunicationAgent_CreateColumn, contentDetails);
-                    //    base.SendMessage(Peformative.Confirm.ToString(), content, agentName, pendingAcceptingCar);
-                    //    columnCarsNames.Add(pendingAcceptingCar);
-                    //}
-
                     // Create new column and add itself to it as leader
+                    isInColumn = true;
                     isColumnLeader = true;
                     currentColumnData = new ColumnData()
                     {
@@ -581,7 +564,7 @@ public class CommunicationAgent : Agent
                 else
                 {
                     creatingColumn_Wait_Timer = 0;
-                    state = CommunicationAgentState.CreatingColumnProposal_Wait;
+                    state = CommunicationAgentState.CreateColumnProposal_Wait;
 
                     return;
                 }
@@ -604,35 +587,45 @@ public class CommunicationAgent : Agent
                 {
                     if (message.GetPerformative() == Peformative.Request.ToString())
                     {
-                        // Update data in last car in column
+                        // Accept
+                        if (columnCarsNames.Count < maxColumnSize)
                         {
-                            ColumnData columnData = new ColumnData()
+                            // Update data in last car in column
                             {
-                                leaderName = agentName,
-                                pathNodesNames = carAgent.GetPathNodesNames(),
-                                followAgentName = columnCarsNames[columnCarsNames.Count - 2], // Same as before
-                                behindAgentName = message.GetSender() // New
-                            };
-                            string contentDetails = JsonUtility.ToJson(columnData);
-                            string content = Utils.CreateContent(SystemAction.CommunicationAgent_UpdateColumn, contentDetails);
-                            base.SendMessage(Peformative.Inform.ToString(), content, agentName, columnCarsNames[columnCarsNames.Count - 1]);
+                                ColumnData columnData = new ColumnData()
+                                {
+                                    leaderName = agentName,
+                                    pathNodesNames = carAgent.GetPathNodesNames(),
+                                    followAgentName = columnCarsNames[columnCarsNames.Count - 2], // Same as before
+                                    behindAgentName = message.GetSender() // New
+                                };
+                                string contentDetails = JsonUtility.ToJson(columnData);
+                                string content = Utils.CreateContent(SystemAction.CommunicationAgent_UpdateColumn, contentDetails);
+                                base.SendMessage(Peformative.Inform.ToString(), content, agentName, columnCarsNames[columnCarsNames.Count - 1]);
+                            }
+
+                            // Add new car to column
+                            {
+                                columnCarsNames.Add(message.GetSender());
+                                ColumnData columnData = new ColumnData()
+                                {
+                                    leaderName = agentName,
+                                    pathNodesNames = carAgent.GetPathNodesNames(),
+                                    followAgentName = columnCarsNames[columnCarsNames.Count - 2], // Follow last car (except self)
+                                    behindAgentName = "" // Nothing is behind
+                                };
+
+                                string contentDetails = JsonUtility.ToJson(columnData);
+                                string content = Utils.CreateContent(SystemAction.CommunicationAgent_JoinColumn, contentDetails);
+                                base.SendMessage(Peformative.Accept.ToString(), content, agentName, message.GetSender());
+                            }
                         }
-
-                        // Add new car to column
+                        // Reject request if column size reached the limit
+                        else
                         {
-                            columnCarsNames.Add(message.GetSender());
-                            ColumnData columnData = new ColumnData()
-                            {
-                                leaderName = agentName,
-                                pathNodesNames = carAgent.GetPathNodesNames(),
-                                followAgentName = columnCarsNames[columnCarsNames.Count - 2], // Follow last car (except self)
-                                behindAgentName = "" // Nothing is behind
-                            };
-
-                            string contentDetails = JsonUtility.ToJson(columnData);
-                            string content = Utils.CreateContent(SystemAction.CommunicationAgent_JoinColumn, contentDetails);
-                            base.SendMessage(Peformative.Accept.ToString(), content, agentName, message.GetSender());
-                        }                       
+                            string content = Utils.CreateContent(SystemAction.CommunicationAgent_JoinColumn, "");
+                            base.SendMessage(Peformative.Reject.ToString(), content, agentName, message.GetSender());  
+                        }   
                     }
                 }
                 
@@ -647,8 +640,9 @@ public class CommunicationAgent : Agent
                             if (columnCarsNames.Count <= 2)
                             {
                                 currentColumnData = null;
+                                isInColumn = false;
                                 columnCarsNames.Clear();
-                                state = CommunicationAgentState.CreatingColumnProposal_Wait;
+                                state = CommunicationAgentState.CreateColumnProposal_Wait;
 
                                 return;
                             }
@@ -708,8 +702,6 @@ public class CommunicationAgent : Agent
             }
             else
             {
-                DrawColumnDebugLine();
-
                 // Receive data from car in front and update target position based on it
                 if (message != null && receiveContent.action == SystemAction.CommunicationAgent_UpdateCarBehind.ToString())
                 {
@@ -759,11 +751,10 @@ public class CommunicationAgent : Agent
                         // Delete column (since only previous leader and this car are left, and previous leader is leaving)
                         if (columnCarsNames.Count <= 2)
                         {
+                            isInColumn = false;
                             currentColumnData = null;
                             columnCarsNames.Clear();
-                            state = CommunicationAgentState.CreatingColumnProposal_Wait;
-                            lr.SetPosition(0, new Vector3(0, -10, 0));
-                            lr.SetPosition(1, new Vector3(0, -10, 0));
+                            state = CommunicationAgentState.CreateColumnProposal_Wait;
                             return;
                         }
                         // Take over leadership
@@ -797,22 +788,10 @@ public class CommunicationAgent : Agent
                                 base.SendMessage(Peformative.Inform.ToString(), content, agentName, columnCarsNames[i]);
                             }
 
-                            // Hide debug line
-                            lr.SetPosition(0, new Vector3(0, -10, 0));
-                            lr.SetPosition(1, new Vector3(0, -10, 0));
-
                             return;
                         }    
                     }
                 }
-                
-                
-                // TODO
-                // Get speed from leader and use it if distance to target is small
-
-                // Speed up if distance to target is big and target is far ahead
-
-                // Slow downp if distance to target is big and target is far behind
             }
 
             // - Send data to car behind
@@ -873,14 +852,13 @@ public class CommunicationAgent : Agent
         {
             if (!setupStates.Contains(state)) // Is not in any setup state
             {
-                //float distanceToTarget = Vector3.Distance(carAgent.GetCarPosition(), target.Value);
                 float distanceToDestination = Vector3.Distance(carAgent.GetCarPosition(), carAgent.GetDestinationPosition().Value);
 
                 if (distanceToDestination < reachDestinationRadius)
                 {
                     if (state == CommunicationAgentState.MovingInColumn)
                     {
-                        // Hand over the leadership (send list of agents in column)
+                        // Hand over the leadership to car behind
                         if (isColumnLeader)
                         {
                             DebugLog("Sending hand over leadership request to " + currentColumnData.behindAgentName);
@@ -890,7 +868,7 @@ public class CommunicationAgent : Agent
                             string content = Utils.CreateContent(SystemAction.CommunicationAgent_LeaveColumn_TransferLeadership, contentDetails);
                             base.SendMessage(Peformative.Request.ToString(), content, agentName, currentColumnData.behindAgentName);
                         }
-                        // Notify leader
+                        // Notify leader about leaving
                         else
                         {
                             string content = Utils.CreateContent(SystemAction.CommunicationAgent_LeaveColumn_NotifyLeader, "");
@@ -916,7 +894,7 @@ public class CommunicationAgent : Agent
         CarUpdateData carUpdateData = new CarUpdateData()
         {
             position = carAgent.GetCarPosition(),
-            inColumn = state == CommunicationAgentState.MovingInColumn ? true : false,
+            inColumn = isInColumn,
             isColumnLeader = isColumnLeader,
             destinationNodeName = carAgent.GetDestinationNodeName(),
             pathNodeNames = carAgent.GetPathNodesNames(),
@@ -945,34 +923,6 @@ public class CommunicationAgent : Agent
         }
     }
 
-    void DrawColumnDebugLine()
-    {
-        Agent a = null;
-        if (currentColumnData != null)
-        {
-            agentPlatform.registeredAgents.TryGetValue(currentColumnData.followAgentName, out a);
-        }
-
-        if (a != null)
-        {
-            lr.SetPosition(0, transform.position + new Vector3(0, 0.05f, 0));
-            lr.SetPosition(1, a.transform.position + new Vector3(0, 0.05f, 0));
-        }
-        else
-        {
-            lr.SetPosition(0, new Vector3(0, -10, 0));
-            lr.SetPosition(1, new Vector3(0, -10, 0));
-        }
-    }
-
-    void DrawTargetForCarBehind()
-    {
-       // Vector3 moveDirection = (carAgent.GetCarPosition() - carAgent.GetTarget()).normalized;
-       // Vector3 position = carAgent.GetCarPosition() - moveDirection * 0.2f;
-
-        
-    }
-
     private void OnDrawGizmosSelected()
     {
         Gizmos.DrawWireSphere(transform.position, columnJoinRadius);
@@ -980,9 +930,6 @@ public class CommunicationAgent : Agent
         if (target.HasValue)
         {
             Gizmos.DrawSphere(target.Value, 0.02f);
-        }
-
-        
+        }   
     }
-
 }

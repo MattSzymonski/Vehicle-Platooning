@@ -67,13 +67,11 @@ public class CentralAgent : Agent
             if (message.GetPerformative() == Peformative.Query.ToString())
             {
                 string sender = message.GetSender();
-                //string destination = receiveContent.contentDetails;
 
                 // Get cars nearby which are in certain radius
                 List<string> agents = communicationAgents.Keys.Where(x => (
                     communicationAgents[x] != null &&
                     x != sender && 
-                    //communicationAgents[x].pathNodeNames.Contains(destination) && 
                     Vector3.Distance(communicationAgents[sender].position, communicationAgents[x].position) < columnJoinRadius)
                 ).ToList();
 

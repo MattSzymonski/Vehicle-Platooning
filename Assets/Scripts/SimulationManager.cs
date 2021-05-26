@@ -123,7 +123,6 @@ public class SimulationManager : MonoBehaviour
         communicationAgent.reachDestinationRadius = 0.1f;
         communicationAgent.centralAgentName = "CentralAgent";
         communicationAgent.agentPlatform = agentPlatform;
-        communicationAgent.columnDebugMaterial = columnDebugMaterial;
 
         spawnedCount++;
     }
