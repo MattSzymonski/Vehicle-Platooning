@@ -77,14 +77,7 @@ public class CentralAgent : Agent
                     Vector3.Distance(communicationAgents[sender].position, communicationAgents[x].position) < columnJoinRadius)
                 ).ToList();
 
-                // List<string> agents = communicationAgents.Keys.Where(x => (
-                //    communicationAgents[x] != null &&
-                //    x != sender &&
-                //    communicationAgents[x].pathNodeNames.Contains(destination) &&
-                //    Vector3.Distance(communicationAgents[sender].position, communicationAgents[x].position) < columnJoinRadius)
-                //).ToList();
-
-                // List of names of agents (which are leaders), their paths and distance to sender
+                // List of names of agents (which are leaders), their paths, current target node and distance to sender
                 List<CarDataBasic> columnLeaderCommunicationAgents = agents.Where(x => communicationAgents[x].isColumnLeader == true).Select(x => new CarDataBasic
                 {
                     name = x,
@@ -93,7 +86,7 @@ public class CentralAgent : Agent
                     distance = Vector3.Distance(communicationAgents[x].position, communicationAgents[sender].position)
                 }).ToList();
 
-                // List of names of agents (which are lonely), their paths and distance to sender
+                // List of names of agents (which are lonely), their paths, current target node and distance to sender
                 List<CarDataBasic> lonelyCommunicationAgents = agents.Where(x => communicationAgents[x].inColumn == false).Select(x => new CarDataBasic
                 {
                     name = x,

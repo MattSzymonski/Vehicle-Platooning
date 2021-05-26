@@ -94,8 +94,10 @@ MonoBehaviour:
   columnJoinRadius: 1
   reachDestinationRadius: 0.3
   centralAgentName: CentralAgent
-  catchUpColumnSpeed: 0.4
-  catchUpColumnDistance: 0.6
+  columnSpeed: 0.2
+  catchUpColumnSpeed: 0.5
+  catchUpColumnDistance: 0.15
+  betweenCarDistances: 0.1
   carAgentName: 
   carAgentPassword: 
   registeringInCentralAgent_Wait_Timeout: 1

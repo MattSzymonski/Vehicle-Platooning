@@ -108,6 +108,8 @@ public class CommunicationAgent : Agent
 
         columnCarsNames = new List<string>();
         pendingAcceptingCars = new List<string>();
+        columnsInProximity = new List<(string, int)>();
+        lonelyCarsInProximity = new List<string>();
 
         lr = gameObject.AddComponent<LineRenderer>();
         lr.material = columnDebugMaterial;
@@ -222,10 +224,43 @@ public class CommunicationAgent : Agent
             {
                 if (message.GetPerformative() == Peformative.Propose.ToString())
                 {
-                    string content = Utils.CreateContent(SystemAction.CommunicationAgent_CreateColumn, "");
-                    base.SendMessage(Peformative.Accept.ToString(), content, agentName, message.GetSender());
-                    state = CommunicationAgentState.CreatingColumnConfirmation_Wait;
-                    creatingColumnProposal_Wait_Timer = 0;
+                    ColumnCreateData columnCarData = JsonUtility.FromJson<ColumnCreateData>(receiveContent.contentDetails);
+
+                    // If column goes in the same direction then accept the proposal
+                    List<string> path = carAgent.GetPathNodesNames();
+                    string currentNode = carAgent.GetCurrentTargetNodeName();
+                    
+                    List<string> currentPath = path.GetRange(path.IndexOf(currentNode) - 1, path.Count - path.IndexOf(currentNode) + 1); // Nodes which are left on the path (has not been reached yet) (and last visited node)
+                    List<string> currentColumnPath = columnCarData.pathNodesNames.GetRange(columnCarData.pathNodesNames.IndexOf(columnCarData.currentTargetNodeName) - 1, columnCarData.pathNodesNames.Count - columnCarData.pathNodesNames.IndexOf(columnCarData.currentTargetNodeName) + 1); // Nodes which are left on the path (has not been reached yet)
+
+                    // Calculate common points count in the same direction
+                    List<string> pathLeft1 = currentColumnPath.Count >= currentPath.Count ? currentColumnPath : currentPath;
+                    List<string> pathLeft2 = currentColumnPath.Count < currentPath.Count ? currentColumnPath : currentPath;
+                    int pathCurrentIndex = 0;
+                    for (int i = 0; i < pathLeft1.Count; i++) // Iterate longer list and count same items along the way on the shorter list
+                    {
+                        if (pathCurrentIndex <= pathLeft2.Count - 1) // Check if index is in range
+                        {
+                            if (pathLeft1[i] == pathLeft2[pathCurrentIndex])
+                            {
+                                pathCurrentIndex++;
+                            }
+                        }
+                    }
+                    int commonPointsCount = pathCurrentIndex;
+                    
+                    if (commonPointsCount > 1) // Have common points and same direction so accept proposal
+                    {
+                        string content = Utils.CreateContent(SystemAction.CommunicationAgent_CreateColumn, "");
+                        base.SendMessage(Peformative.Accept.ToString(), content, agentName, message.GetSender());
+                        state = CommunicationAgentState.CreatingColumnConfirmation_Wait;
+                        creatingColumnProposal_Wait_Timer = 0;
+                    }
+                    else // Not same direction so reject proposal
+                    {
+                        string content = Utils.CreateContent(SystemAction.CommunicationAgent_CreateColumn, "");
+                        base.SendMessage(Peformative.Reject.ToString(), content, agentName, message.GetSender());
+                    }
 
                     return;
                 }
@@ -322,34 +357,44 @@ public class CommunicationAgent : Agent
                             
                             List<string> path = carAgent.GetPathNodesNames();
                             string currentNode = carAgent.GetCurrentTargetNodeName();
-                            List<string> pathLeft = path.GetRange(path.IndexOf(currentNode), path.Count); // Nodes which are left on the path (has not been reached yet)
+                            //int startIndex = path.IndexOf(currentNode) - 1;
+                           // int count = path.Count - startIndex;
+                          //  List<string> currentLeft = path.GetRange(startIndex, count); // Nodes which are left on the path (has not been reached yet) (and last visited node)
+
+                            List<string> currentPath = path.GetRange(path.IndexOf(currentNode) - 1, path.Count - path.IndexOf(currentNode) + 1); // Nodes which are left on the path (has not been reached yet) (and last visited node)
+                          
+
+
 
                             foreach (var agent in columnCarData.columnLeaderCommunicationAgents)
                             {
-                                List<string> columnPathLeft = agent.pathNodesNames.GetRange(agent.pathNodesNames.IndexOf(agent.currentTargetNodeName), agent.pathNodesNames.Count); // Nodes which are left on the path (has not been reached yet)
+                               // List<string> columnPathLeft = agent.pathNodesNames.GetRange(agent.pathNodesNames.IndexOf(agent.currentTargetNodeName) - 1, agent.pathNodesNames.Count - 1); // Nodes which are left on the path (has not been reached yet)
+                                List<string> currentColumnPath = agent.pathNodesNames.GetRange(agent.pathNodesNames.IndexOf(agent.currentTargetNodeName) - 1, agent.pathNodesNames.Count - agent.pathNodesNames.IndexOf(agent.currentTargetNodeName) + 1); // Nodes which are left on the path (has not been reached yet)
 
                                 // Calculate common points count in the same direction
-                                List<string> pathLeft1 = columnPathLeft.Count >= pathLeft.Count ? columnPathLeft : pathLeft;
-                                List<string> pathLeft2 = columnPathLeft.Count < pathLeft.Count ? columnPathLeft : pathLeft;
+                                List<string> pathLeft1 = currentColumnPath.Count >= currentPath.Count ? currentColumnPath : currentPath;
+                                List<string> pathLeft2 = currentColumnPath.Count < currentPath.Count ? currentColumnPath : currentPath;
                                 int pathCurrentIndex = 0;
                                 for (int i = 0; i < pathLeft1.Count; i++) // Iterate longer list and count same items along the way on the shorter list
                                 {
-                                    if (pathLeft2[pathCurrentIndex] == pathLeft1[i])
+                                    if (pathCurrentIndex <= pathLeft2.Count - 1) // Check if index is in range
                                     {
-                                        pathCurrentIndex++;
+                                        if (pathLeft1[i] == pathLeft2[pathCurrentIndex])
+                                        {
+                                            pathCurrentIndex++;
+                                        }
                                     }
                                 }
-                                int commonPointsCount = pathCurrentIndex + 1;
-                                if (commonPointsCount > 0)
+                                int commonPointsCount = pathCurrentIndex;
+                                if (commonPointsCount > 1)
                                 {
                                     columnsInProximity.Add((agent.name, commonPointsCount));
                                 }     
                             }
 
-                            columnsInProximity.OrderBy(x => x.Item2); // Order list in terms of greatest number of common points
-
-                            if (columnsInProximity.Count > 0)
+                            if (columnsInProximity != null && columnsInProximity.Count > 0)
                             {
+                                columnsInProximity.OrderBy(x => x.Item2); // Order list in terms of greatest number of common points
                                 state = CommunicationAgentState.JoiningColumn_Send;
                                 return;
                             }
@@ -410,17 +455,32 @@ public class CommunicationAgent : Agent
                 }
                 if (message.GetPerformative() == Peformative.Reject.ToString())
                 {
+                    if (columnsInProximity.Count > 0)
+                    {
+                        state = CommunicationAgentState.JoiningColumn_Send;
+                    }
+                    else
+                    {
+                        state = CommunicationAgentState.CreatingColumnProposal_Wait;
+                    }
+
+                    joiningColumn_Wait_Timer = 0;
                     return;
-                    // Wait for more answers
                 }
             }
             
             // Wait for some time for answers then try to find or create column again
             if (joiningColumn_Wait_Timer >= joiningColumn_Wait_Timeout)
             {
-                state = CommunicationAgentState.CreatingColumnProposal_Wait;
+                if (columnsInProximity.Count > 0)
+                {
+                    state = CommunicationAgentState.JoiningColumn_Send;
+                }
+                else
+                {
+                    state = CommunicationAgentState.CreatingColumnProposal_Wait;
+                }
                 joiningColumn_Wait_Timer = 0;
-
                 return;
             }
             else
@@ -436,6 +496,7 @@ public class CommunicationAgent : Agent
             {
                 leaderName = agentName,
                 pathNodesNames = carAgent.GetPathNodesNames(),
+                currentTargetNodeName = carAgent.GetCurrentTargetNodeName()
             };
             string contentDetails = JsonUtility.ToJson(columnCreateData);
             string content = Utils.CreateContent(SystemAction.CommunicationAgent_CreateColumn, contentDetails);
@@ -555,7 +616,6 @@ public class CommunicationAgent : Agent
                             string contentDetails = JsonUtility.ToJson(columnData);
                             string content = Utils.CreateContent(SystemAction.CommunicationAgent_UpdateColumn, contentDetails);
                             base.SendMessage(Peformative.Inform.ToString(), content, agentName, columnCarsNames[columnCarsNames.Count - 1]);
-                            Debug.Log("Update sent to " + columnCarsNames[columnCarsNames.Count - 1]);
                         }
 
                         // Add new car to column
@@ -597,30 +657,40 @@ public class CommunicationAgent : Agent
 
                             // Update data in car in front of leaving car
                             {
-                                ColumnData columnData = new ColumnData()
+                                if (leavingCarIndex - 1 != 0) //  if car is not this agent (leader)
                                 {
-                                    leaderName = agentName,
-                                    pathNodesNames = carAgent.GetPathNodesNames(),
-                                    followAgentName = leavingCarIndex - 2 >= 0 ? columnCarsNames[leavingCarIndex - 2] : "", // Same as before leave
-                                    behindAgentName = leavingCarIndex + 1 <= columnCarsNames.Count - 1 ? columnCarsNames[leavingCarIndex + 1] : "" // New
-                                };
-                                string contentDetails = JsonUtility.ToJson(columnData);
-                                string content = Utils.CreateContent(SystemAction.CommunicationAgent_UpdateColumn, contentDetails);
-                                base.SendMessage(Peformative.Inform.ToString(), content, agentName, columnCarsNames[leavingCarIndex - 1]);
+                                    ColumnData columnData = new ColumnData()
+                                    {
+                                        leaderName = agentName,
+                                        pathNodesNames = carAgent.GetPathNodesNames(),
+                                        followAgentName = leavingCarIndex - 2 >= 0 ? columnCarsNames[leavingCarIndex - 2] : "", // Same as before leave
+                                        behindAgentName = leavingCarIndex + 1 <= columnCarsNames.Count - 1 ? columnCarsNames[leavingCarIndex + 1] : "" // New
+                                    };
+                                    string contentDetails = JsonUtility.ToJson(columnData);
+                                    string content = Utils.CreateContent(SystemAction.CommunicationAgent_UpdateColumn, contentDetails);
+                                    base.SendMessage(Peformative.Inform.ToString(), content, agentName, columnCarsNames[leavingCarIndex - 1]);
+                                }
+                                else // if car is this agent (leader)
+                                {
+                                    currentColumnData.behindAgentName = columnCarsNames[leavingCarIndex + 1];
+                                }
                             }
 
-                            // Update data in car behind leaving car
+                            // Update data in car behind leaving car if any
                             {
-                                ColumnData columnData = new ColumnData()
+                                if (leavingCarIndex != columnCarsNames.Count - 1) // Check if there is car behind
                                 {
-                                    leaderName = agentName,
-                                    pathNodesNames = carAgent.GetPathNodesNames(),
-                                    followAgentName = leavingCarIndex - 1 >= 0 ? columnCarsNames[leavingCarIndex - 1] : "", // New
-                                    behindAgentName = leavingCarIndex + 2 <= columnCarsNames.Count - 1 ? columnCarsNames[leavingCarIndex + 2] : "" // Same as before leave
-                                };
-                                string contentDetails = JsonUtility.ToJson(columnData);
-                                string content = Utils.CreateContent(SystemAction.CommunicationAgent_UpdateColumn, contentDetails);
-                                base.SendMessage(Peformative.Inform.ToString(), content, agentName, columnCarsNames[leavingCarIndex + 1]);
+                                    ColumnData columnData = new ColumnData()
+                                    {
+                                        leaderName = agentName,
+                                        pathNodesNames = carAgent.GetPathNodesNames(),
+                                        followAgentName = leavingCarIndex - 1 >= 0 ? columnCarsNames[leavingCarIndex - 1] : "", // New
+                                        behindAgentName = leavingCarIndex + 2 <= columnCarsNames.Count - 1 ? columnCarsNames[leavingCarIndex + 2] : "" // Same as before leave
+                                    };
+                                    string contentDetails = JsonUtility.ToJson(columnData);
+                                    string content = Utils.CreateContent(SystemAction.CommunicationAgent_UpdateColumn, contentDetails);
+                                    base.SendMessage(Peformative.Inform.ToString(), content, agentName, columnCarsNames[leavingCarIndex + 1]);
+                                }      
                             }
 
                             // Remove leaving car from list
@@ -675,7 +745,6 @@ public class CommunicationAgent : Agent
                 {
                     if (message.GetPerformative() == Peformative.Inform.ToString())
                     {
-                        Debug.Log("cccccccccccc update");
                         currentColumnData = JsonUtility.FromJson<ColumnData>(receiveContent.contentDetails);
                     }
                 }
@@ -772,12 +841,17 @@ public class CommunicationAgent : Agent
         // When not in column just follow the calculated path
         else
         {
-            carAgent.SetTarget(carAgent.GetCurrentTargetNodePosition()); // Just follow its path, node by node
+            try
+            {
+                carAgent.SetTarget(carAgent.GetCurrentTargetNodePosition()); // Just follow its path, node by node
+            }
+            catch
+            {
+                DebugLog("eeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
+            }
         }
 
         // --- Other ---
-
-        
 
         // Update car data in central agent
         {
@@ -795,8 +869,6 @@ public class CommunicationAgent : Agent
             }
         }
 
-
-
         // Reach target leave column and end
         {
             if (!setupStates.Contains(state)) // Is not in any setup state
@@ -811,7 +883,7 @@ public class CommunicationAgent : Agent
                         // Hand over the leadership (send list of agents in column)
                         if (isColumnLeader)
                         {
-                            Debug.Log("Sending led req to " + currentColumnData.behindAgentName);
+                            DebugLog("Sending hand over leadership request to " + currentColumnData.behindAgentName);
                             StringList stringList = new StringList() { list = columnCarsNames };
 
                             string contentDetails = JsonUtility.ToJson(stringList);

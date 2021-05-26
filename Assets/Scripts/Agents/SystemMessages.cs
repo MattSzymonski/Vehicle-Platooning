@@ -52,6 +52,7 @@ public class ColumnCreateData // For creating new column (send by leader to poss
 {
     public string leaderName;
     public List<string> pathNodesNames;
+    public string currentTargetNodeName;
 }
 
 [Serializable]
