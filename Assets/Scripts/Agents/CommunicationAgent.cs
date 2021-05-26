@@ -20,7 +20,6 @@ public enum CommunicationAgentState
     JoiningColumn_Wait,
     CreatingColumn_Send,
     CreatingColumn_Wait,
-
     CreatingNewColumn,
     MovingInColumn,
 }

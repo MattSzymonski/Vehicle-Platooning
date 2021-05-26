@@ -13,8 +13,6 @@ public class SimulationManager : MonoBehaviour
 
     [Header("Settings")]
     public int carCount;
-    public float spawnDelay = 1;
-
     public Material columnDebugMaterial;
 
     [Header("References")]
@@ -24,29 +22,24 @@ public class SimulationManager : MonoBehaviour
     public GameObject agentsParent;
     public AgentPlatform agentPlatform;
 
-
-
     [Header("Car Agent Settings")]
-    //public float speed = 1;
     public float arrivalDistance = 0.1f;
     [MinMaxSlider(0.0f, 10.0f)] public Vector2 speedRange;
     public float columnJoinRadius = 1.0f;
 
 
-    float timer;
+    public float spawn_Timeout = 1;
+    public float spawn_Timer;
     int spawnedCount = 0;
 
     [Header("UI")]
     public Text simulationSpeedText;
     
-
     void Start()
     {
         Time.timeScale = speedMultiplier;
         SpawnCentralAgent();
     }
-
-   
 
     void Update()
     {
@@ -64,22 +57,21 @@ public class SimulationManager : MonoBehaviour
 
         if (spawning)
         {
-            if(timer > spawnDelay)
+            if(spawn_Timer > spawn_Timeout)
             {
                 if (spawnedCount < 1)
                 {
                     SpawnCarAtRandomNode();
                 }
-                
-                timer = 0;
+
+                spawn_Timer = 0;
             }
             else
             {
-                timer++;
+                spawn_Timer++;
             }
         }    
     }
-
 
     void SpawnCentralAgent()
     {
@@ -129,8 +121,6 @@ public class SimulationManager : MonoBehaviour
 
     void SpawnAgentsManually()
     {
-
-
         if (Input.GetMouseButtonDown(0))
         {
             //create a ray cast and set it to the mouses cursor position in game
@@ -140,7 +130,6 @@ public class SimulationManager : MonoBehaviour
             {
                 //draw invisible ray cast/vector
                 Debug.DrawLine(ray.origin, hit.point);
-                //Debug.Log(hit.point);
 
                 // Find closest node
                 var closestNode = navSystem.nodes.OrderBy(o => Vector3.Distance(o.transform.position, hit.point)).First();
@@ -168,8 +157,6 @@ public class SimulationManager : MonoBehaviour
         simulationSpeedText.text = speedMultiplier.ToString();
         Time.timeScale = speedMultiplier;
     }
-
-
 
 }
 
