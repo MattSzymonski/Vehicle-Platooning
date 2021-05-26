@@ -87,13 +87,6 @@ public class CommunicationAgent : Agent
     public float updateCarBehind_Timeout = 3.0f;
     float updateCarBehind_Timer = 0.0f;
 
-   
-
-    public float timeout = 3.0f;
-    public float timer = 0.0f;
-
-
-
     CommunicationAgentState[] setupStates = { 
         CommunicationAgentState.RegisteringInPlatform, 
         CommunicationAgentState.RegisteringInCentralAgent_Send, 
@@ -109,23 +102,11 @@ public class CommunicationAgent : Agent
         columnCarsNames = new List<string>();
         pendingAcceptingCars = new List<string>();
         columnsInProximity = new List<(string, int)>();
-        lonelyCarsInProximity = new List<string>();
-
-       
+        lonelyCarsInProximity = new List<string>();  
     }
 
     void Update() // Each frame
     {
-        if (timer < timeout)
-        {
-            timer += Time.deltaTime;
-            
-        } else
-        {
-            //Debug.Log("Time");
-            timer = 0;
-        }
-
         MainLoop();
     }
 
@@ -262,9 +243,6 @@ public class CommunicationAgent : Agent
             }
             
             // Wait for some time for answers then try to find or create column
-            
-
-
             if (creatingColumnProposal_Wait_Timer >= creatingColumnProposal_Wait_Timeout + creatingColumnProposal_Wait_Timeout_Randomizer)
             {
                 DebugLog("Stop waiting for proposals");
@@ -923,13 +901,5 @@ public class CommunicationAgent : Agent
         }
     }
 
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.DrawWireSphere(transform.position, columnJoinRadius);
-
-        if (target.HasValue)
-        {
-            Gizmos.DrawSphere(target.Value, 0.02f);
-        }   
-    }
+   
 }

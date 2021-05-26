@@ -108,7 +108,7 @@ MonoBehaviour:
   joiningColumn_Wait_Timeout: 1
   creatingColumn_Wait_Timeout: 1
   creatingColumnProposal_Wait_Timeout: 1
-  creatingColumnProposal_Wait_Timeout_Randomizer: 0
+  creatingColumnProposal_Wait_Timeout_Randomizer: 3
   creatingColumnConfirmation_Wait_Timeout: 1
   updateCarDataInCentralAgent_Timeout: 1
   updateCarBehind_Timeout: 0.5

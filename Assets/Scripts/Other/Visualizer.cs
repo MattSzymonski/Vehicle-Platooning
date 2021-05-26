@@ -87,4 +87,14 @@ public class Visualizer : MonoBehaviour
             }
         }
     }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.DrawWireSphere(transform.position, communicationAgent.columnJoinRadius);
+
+        if (communicationAgent.target.HasValue)
+        {
+            Gizmos.DrawSphere(communicationAgent.target.Value, 0.02f);
+        }
+    }
 }
