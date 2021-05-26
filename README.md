@@ -3,5 +3,5 @@ Simulation of highway vehicle platooning using agents system approach
 Done in Unity 2020.3.4f1
 
 
-<img src="Other/CommunicationAgentStateDiagrams.png" img width=100%>
+<img src="Other/CommunicationAgentStateDiagrams.png">
 
