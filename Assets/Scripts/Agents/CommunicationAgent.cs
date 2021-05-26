@@ -7,12 +7,12 @@ using UnityEngine;
 
 public enum CommunicationAgentState
 {
-    RegisteringInPlatform,
+    RegisteringInAgentPlatform,
     RegisteringInCentralAgent_Send,
     RegisteringInCentralAgent_Wait,
     ConnectingToCarAgent,
-    InitialDataUpdateInCentralAgent,
-    CreateColumnProposal_Wait,
+    CentralAgentInitialDataUpdate_Send,
+    ColumnCreateProposal_Wait,
     CreateColumnConfirmation_Wait,
     ColumnSearching_Send,
     ColumnSearching_Wait,
@@ -29,7 +29,7 @@ public enum CommunicationAgentState
 public class CommunicationAgent : Agent
 {
     [Header("General Info")]
-    [ReadOnly] public CommunicationAgentState state = CommunicationAgentState.RegisteringInPlatform;
+    [ReadOnly] public CommunicationAgentState state = CommunicationAgentState.RegisteringInAgentPlatform;
     [ReadOnly] public bool registeredInCentralAgent;
 
     [Header("Column Moving Info")]
@@ -49,6 +49,7 @@ public class CommunicationAgent : Agent
     public float reachDestinationRadius = 0.3f;
     public string centralAgentName; // Entered via UI by user (mobile app or on car's cockpit screen)
     public float columnSpeed = 0.2f;
+    public float waitForColumnSpeed = 0.05f; // Speed of car when it needs to wait to be overtook by the column it joined
     public float catchUpColumnSpeed = 0.4f; // Speed of car when it is further than catchUpColumnDistance from car it is following, if distance is smaller then column speed is used
     public float catchUpColumnDistance = 0.3f; 
     public float betweenCarDistances = 0.3f; // Distance from car in direction oposite to its driving direction (it should be similar to catchUpColumnDistance)
@@ -87,10 +88,11 @@ public class CommunicationAgent : Agent
     float updateCarBehind_Timer = 0.0f;
 
     CommunicationAgentState[] setupStates = { 
-        CommunicationAgentState.RegisteringInPlatform, 
+        CommunicationAgentState.RegisteringInAgentPlatform, 
         CommunicationAgentState.RegisteringInCentralAgent_Send, 
         CommunicationAgentState.RegisteringInCentralAgent_Wait, 
-        CommunicationAgentState.ConnectingToCarAgent 
+        CommunicationAgentState.ConnectingToCarAgent,
+        CommunicationAgentState.CentralAgentInitialDataUpdate_Send
     };
 
     void Start()
@@ -116,8 +118,8 @@ public class CommunicationAgent : Agent
 
         // --- Setup states --- 
 
-        // Register this agent in agent plaftorm (needed to send messages)
-        if (state == CommunicationAgentState.RegisteringInPlatform)
+        // Register this agent in Agent Platform (needed to send messages)
+        if (state == CommunicationAgentState.RegisteringInAgentPlatform)
         {
             var response = RegisterInAgentPlatform();
             if (response)
@@ -128,17 +130,17 @@ public class CommunicationAgent : Agent
             return;
         }
 
-        // Register this agent in central system agent
+        // Send registration request to Central Agent to register this agent in the System
         if (state == CommunicationAgentState.RegisteringInCentralAgent_Send)
         {
-            string content = Utils.CreateContent(SystemAction.CommunicationAgent_RegisterInCentralAgent, "xx");
+            string content = Utils.CreateContent(SystemAction.CommunicationAgent_RegisterInCentralAgent, "");
             base.SendMessage(Peformative.Request.ToString(), content, agentName, centralAgentName);
             state = CommunicationAgentState.RegisteringInCentralAgent_Wait;
 
             return;
         }
 
-        // Wait for registration confirmation
+        // Wait for response for registration from Central Agent (Accept or Reject)
         if (state == CommunicationAgentState.RegisteringInCentralAgent_Wait)
         {
             // Read message from central agent
@@ -157,7 +159,6 @@ public class CommunicationAgent : Agent
                 }
             }
             
-
             // Wait for some time for answers then try to send once again
             if (registeringInCentralAgent_Wait_Timer >= registeringInCentralAgent_Wait_Timeout)
             {
@@ -172,28 +173,28 @@ public class CommunicationAgent : Agent
             }
         }
 
-        // Connect to car agent
+        // Connect to Car Agent using its exposed API
         if (state == CommunicationAgentState.ConnectingToCarAgent)
         {
             ConnectToCarAgent(carAgentName, carAgentPassword);
-            state = CommunicationAgentState.InitialDataUpdateInCentralAgent;
+            state = CommunicationAgentState.CentralAgentInitialDataUpdate_Send;
 
             return;
         }
 
-        // Initial update of data in central agent
-        if (state == CommunicationAgentState.InitialDataUpdateInCentralAgent)
+        // Send initial car data update to Central Agent
+        if (state == CommunicationAgentState.CentralAgentInitialDataUpdate_Send)
         {
             UpdateCarDataInCentralAgent();
-            state = CommunicationAgentState.CreateColumnProposal_Wait;
+            state = CommunicationAgentState.ColumnCreateProposal_Wait;
 
             return;
-        }    
+        }
 
         // --- Main states ---
 
-        // Wait for column create proposals, accept or reject them
-        if (state == CommunicationAgentState.CreateColumnProposal_Wait)
+        // Wait for column create proposals from other agents, respond with accept or reject
+        if (state == CommunicationAgentState.ColumnCreateProposal_Wait)
         {
             if (message != null && receiveContent.action == SystemAction.CommunicationAgent_CreateColumn.ToString())
             {
@@ -244,7 +245,6 @@ public class CommunicationAgent : Agent
             // Wait for some time for answers then try to find or create column
             if (creatingColumnProposal_Wait_Timer >= creatingColumnProposal_Wait_Timeout + creatingColumnProposal_Wait_Timeout_Randomizer)
             {
-                DebugLog("Stop waiting for proposals");
                 state = CommunicationAgentState.ColumnSearching_Send;
                 creatingColumnProposal_Wait_Timer = 0;
 
@@ -260,7 +260,7 @@ public class CommunicationAgent : Agent
                 creatingColumnProposal_Wait_Timer += Time.deltaTime;
             }
         }
-        // Reject all proposal (because now agent is in different state)
+        // Reject all proposals (because now agent is in different state)
         else
         {
             if (message != null && receiveContent.action == SystemAction.CommunicationAgent_CreateColumn.ToString())
@@ -273,7 +273,7 @@ public class CommunicationAgent : Agent
             }          
         }
 
-        // Wait for column create confirmations when proposal has been accepted
+        // Wait for column create confirmation from future column leader (the one that has send the proposal) when proposal has been accepted
         if (state == CommunicationAgentState.CreateColumnConfirmation_Wait)
         {
             if (message != null && receiveContent.action == SystemAction.CommunicationAgent_CreateColumn.ToString())
@@ -303,21 +303,17 @@ public class CommunicationAgent : Agent
             }
         }
 
-        // Ask central agent for columns and lonely cars nearby
+        // Send query to Central Agent to find columns and lonely cars in proximity
         if (state == CommunicationAgentState.ColumnSearching_Send)
         {
-            //string content = Utils.CreateContent(SystemAction.CommunicationAgent_NearbyCars, carAgent.GetDestinationNodeName());
-
-            //StringList stringList = new StringList() { list = carAgent.GetPathNodesNames() };
-            //string contentDetails = JsonUtility.ToJson(stringList); // Send list of nodes in message
             string content = Utils.CreateContent(SystemAction.CommunicationAgent_NearbyCars, "");
             base.SendMessage(Peformative.Query.ToString(), content, agentName, centralAgentName);
             state = CommunicationAgentState.ColumnSearching_Wait;
-            DebugLog("send search query");
+
             return;
         }
 
-        // Wait for response with nearby columns and lonely cars from central agent, and find best column to join or create new if not columns in proximity
+        // Wait for response with columns and lonely cars in proximity from Central Agent, and find best column to join or create new if not columns in proximity
         if (state == CommunicationAgentState.ColumnSearching_Wait) 
         {
             if (message != null && receiveContent.action == SystemAction.CommunicationAgent_NearbyCars.ToString()) 
@@ -332,16 +328,14 @@ public class CommunicationAgent : Agent
                     {
                         if (columnCarData.columnLeaderCommunicationAgents.Count > 0)
                         {
-                            // First find columns that have the greathest number of common nodes with path of this agent and are going in the same direction
+                            // First find columns that have the greatest number of common nodes with path of this agent and are going in the same direction
                             // Store them ordered in list, if list is not empty then call best agent, remove it from list and wait for response. 
                             // If list is emptied ask central agent again for columns in proximity
                             
                             List<string> path = carAgent.GetPathNodesNames();
                             string currentNode = carAgent.GetCurrentTargetNodeName();
-
                             List<string> currentPath = path.GetRange(path.IndexOf(currentNode) - 1, path.Count - path.IndexOf(currentNode) + 1); // Nodes which are left on the path (has not been reached yet) (and last visited node)
                           
-
                             foreach (var agent in columnCarData.columnLeaderCommunicationAgents)
                             {
                                 List<string> currentColumnPath = agent.pathNodesNames.GetRange(agent.pathNodesNames.IndexOf(agent.currentTargetNodeName) - 1, agent.pathNodesNames.Count - agent.pathNodesNames.IndexOf(agent.currentTargetNodeName) + 1); // Nodes which are left on the path (has not been reached yet)
@@ -394,7 +388,7 @@ public class CommunicationAgent : Agent
             if (columnSearching_Wait_Timer >= columnSearching_Wait_Timeout)
             {
                 DebugLog("No possibility to join");
-                state = CommunicationAgentState.CreateColumnProposal_Wait;
+                state = CommunicationAgentState.ColumnCreateProposal_Wait;
                 columnSearching_Wait_Timer = 0;
             }
             else
@@ -403,7 +397,7 @@ public class CommunicationAgent : Agent
             }
         }
 
-        // Send join request to the best column in list (already ordered) and remove it from list
+        // Send join request to the best column candidate from list and remove it from list
         if (state == CommunicationAgentState.JoiningColumn_Send)
         {
             string columnLeaderName = columnsInProximity[columnsInProximity.Count - 1].Item1;
@@ -415,7 +409,7 @@ public class CommunicationAgent : Agent
             state = CommunicationAgentState.JoiningColumn_Wait;
         }
 
-        // Wait for response from nearby columns (if no message coming or all were rejecting then start waiting for creating proposals again) and join column if receive acceptation
+        // Wait for response from column leader (if no message coming or all were rejecting then start waiting for creating proposals again) and join column if receive acceptation
         if (state == CommunicationAgentState.JoiningColumn_Wait) 
         {
             if (message != null && receiveContent.action == SystemAction.CommunicationAgent_JoinColumn.ToString()) // Receive decision about joining column from its leader
@@ -437,7 +431,7 @@ public class CommunicationAgent : Agent
                     }
                     else
                     {
-                        state = CommunicationAgentState.CreateColumnProposal_Wait;
+                        state = CommunicationAgentState.ColumnCreateProposal_Wait;
                     }
 
                     joiningColumn_Wait_Timer = 0;
@@ -454,7 +448,7 @@ public class CommunicationAgent : Agent
                 }
                 else
                 {
-                    state = CommunicationAgentState.CreateColumnProposal_Wait;
+                    state = CommunicationAgentState.ColumnCreateProposal_Wait;
                 }
                 joiningColumn_Wait_Timer = 0;
                 return;
@@ -465,7 +459,7 @@ public class CommunicationAgent : Agent
             }       
         }
 
-        // Send create new column proposal to all agents in proximity (discovered earlier via querying central agent)
+        // Send create new column proposal to all lonely cars in proximity (discovered earlier via querying the Central Agent)
         if (state == CommunicationAgentState.CreatingColumn_Send)
         {
             ColumnCreateData columnCreateData = new ColumnCreateData()
@@ -476,6 +470,7 @@ public class CommunicationAgent : Agent
             };
             string contentDetails = JsonUtility.ToJson(columnCreateData);
             string content = Utils.CreateContent(SystemAction.CommunicationAgent_CreateColumn, contentDetails);
+            lonelyCarsInProximity = lonelyCarsInProximity.GetRange(0, maxColumnSize); // Limit number of cars in column
             foreach (var agent in lonelyCarsInProximity)
             {
                 base.SendMessage(Peformative.Propose.ToString(), content, agentName, agent);
@@ -485,7 +480,7 @@ public class CommunicationAgent : Agent
             state = CommunicationAgentState.CreatingColumn_Wait;
         }
 
-        // Wait for response from nearby lonely cars (if no message coming or all were rejecting then start waiting for creating proposals again) and create new column
+        // Wait for response from lonely cars in proximity and create new column (if no message coming or all were rejecting then start waiting for column creating proposals again) 
         if (state == CommunicationAgentState.CreatingColumn_Wait)
         {
             // Receive decision about joining this column from lonely cars
@@ -541,7 +536,7 @@ public class CommunicationAgent : Agent
                 else
                 {
                     creatingColumn_Wait_Timer = 0;
-                    state = CommunicationAgentState.CreateColumnProposal_Wait;
+                    state = CommunicationAgentState.ColumnCreateProposal_Wait;
 
                     return;
                 }
@@ -559,7 +554,7 @@ public class CommunicationAgent : Agent
                         
             if (isColumnLeader)
             {
-                // - Respond to join column requests (as leader)
+                // Respond to join column requests
                 if (message != null && receiveContent.action == SystemAction.CommunicationAgent_JoinColumn.ToString())
                 {
                     if (message.GetPerformative() == Peformative.Request.ToString())
@@ -567,7 +562,7 @@ public class CommunicationAgent : Agent
                         // Accept
                         if (columnCarsNames.Count < maxColumnSize)
                         {
-                            // Update data in last car in column
+                            // Update data in last car in the column
                             {
                                 ColumnData columnData = new ColumnData()
                                 {
@@ -606,7 +601,7 @@ public class CommunicationAgent : Agent
                     }
                 }
                 
-                // - Respond to column leave by other car (as leader)
+                // Respond to column leave by other car
                 if (message != null && receiveContent.action == SystemAction.CommunicationAgent_LeaveColumn_NotifyLeader.ToString())
                 {
                     if (message.GetPerformative() == Peformative.Inform.ToString())
@@ -619,7 +614,7 @@ public class CommunicationAgent : Agent
                                 currentColumnData = null;
                                 isInColumn = false;
                                 columnCarsNames.Clear();
-                                state = CommunicationAgentState.CreateColumnProposal_Wait;
+                                state = CommunicationAgentState.ColumnCreateProposal_Wait;
 
                                 return;
                             }
@@ -670,16 +665,15 @@ public class CommunicationAgent : Agent
                     }
                 }
 
-                // - Slow down if some car is far behind
+                // Slow down if some car is far behind
                 // TODO
 
-                carAgent.SetTarget(carAgent.GetCurrentTargetNodePosition()); // Just follow its path, node by node because for leader there is no agent in front to follow
-
+                carAgent.SetTarget(carAgent.GetCurrentTargetNodePosition()); // Just follow its path, node by node because for the leader there is no agent in front to follow
                 carAgent.SetSpeed(columnSpeed);
             }
             else
             {
-                // Receive data from car in front and update target position based on it
+                // Receive data updates from the Communication Agent in the car in front and update target position based on it
                 if (message != null && receiveContent.action == SystemAction.CommunicationAgent_UpdateCarBehind.ToString())
                 {
                     if (message.GetPerformative() == Peformative.Inform.ToString())
@@ -694,22 +688,33 @@ public class CommunicationAgent : Agent
                         }
                         else
                         {
-                            carAgent.SetTarget(target.Value); // Follow agent
-
-                            if (Vector3.Distance(carAgent.GetCarPosition(), target.Value) > catchUpColumnDistance)
+                            Vector3 toTarget = (target.Value - carAgent.GetCarPosition()).normalized;
+                            if (Vector3.Dot(toTarget, transform.forward) > 0) // If target is in front (direction to target node) then follow it
                             {
-                                carAgent.SetSpeed(catchUpColumnSpeed);
+                                carAgent.SetTarget(target.Value); // Follow agent
+
+                                if (Vector3.Distance(carAgent.GetCarPosition(), target.Value) > catchUpColumnDistance)
+                                {
+                                    carAgent.SetSpeed(catchUpColumnSpeed);
+                                }
+                                else
+                                {
+                                    carAgent.SetSpeed(columnSpeed);
+                                }
                             }
+                            // Slow down and move to current target node waiting to be overtook by column
                             else
                             {
-                                carAgent.SetSpeed(columnSpeed);
+                                carAgent.SetTarget(carAgent.GetCurrentTargetNodePosition());
+                                carAgent.SetSpeed(waitForColumnSpeed);
                             }
+                            
                         }
                         
                     }
                 }
-                
-                // Respond to update data sent by leader when car other left then column
+
+                // Respond to data update sent by leader when car other left then column
                 if (message != null && receiveContent.action == SystemAction.CommunicationAgent_UpdateColumn.ToString())
                 {
                     if (message.GetPerformative() == Peformative.Inform.ToString())
@@ -731,7 +736,7 @@ public class CommunicationAgent : Agent
                             isInColumn = false;
                             currentColumnData = null;
                             columnCarsNames.Clear();
-                            state = CommunicationAgentState.CreateColumnProposal_Wait;
+                            state = CommunicationAgentState.ColumnCreateProposal_Wait;
                             return;
                         }
                         // Take over leadership
@@ -771,7 +776,7 @@ public class CommunicationAgent : Agent
                 }
             }
 
-            // - Send data to car behind
+            // Send data updates to car behind
             if (updateCarBehind_Timer >= updateCarBehind_Timeout)
             {
                 if(currentColumnData.behindAgentName != "")
@@ -803,13 +808,13 @@ public class CommunicationAgent : Agent
             }
             catch
             {
-                DebugLog("eeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
+                //DebugLog("Test");
             }
         }
 
         // --- Other ---
 
-        // Update car data in central agent
+        // Update car data in Central Agent
         {
             if (!setupStates.Contains(state)) // Is not in any setup state
             {           
@@ -838,7 +843,6 @@ public class CommunicationAgent : Agent
                         // Hand over the leadership to car behind
                         if (isColumnLeader)
                         {
-                            DebugLog("Sending hand over leadership request to " + currentColumnData.behindAgentName);
                             StringList stringList = new StringList() { list = columnCarsNames };
 
                             string contentDetails = JsonUtility.ToJson(stringList);
@@ -853,7 +857,7 @@ public class CommunicationAgent : Agent
                         }
                     }
 
-                    // Unregister agent in CentralAgent
+                    // Deregister agent in CentralAgent
                     {
                         string content = Utils.CreateContent(SystemAction.CommunicationAgent_UnregisterInCentralAgent, "");
                         base.SendMessage(Peformative.Request.ToString(), content, agentName, centralAgentName);
@@ -883,8 +887,6 @@ public class CommunicationAgent : Agent
         string content = Utils.CreateContent(SystemAction.CommunicationAgent_UpdateInCentralAgent, contentDetails);
         base.SendMessage(Peformative.Inform.ToString(), content, agentName, centralAgentName);     
     }
-
-
 
     void ConnectToCarAgent(string name, string password)
     {

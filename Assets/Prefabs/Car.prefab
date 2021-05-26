@@ -97,7 +97,8 @@ MonoBehaviour:
   reachDestinationRadius: 0.3
   centralAgentName: CentralAgent
   columnSpeed: 0.2
-  catchUpColumnSpeed: 0.5
+  waitForColumnSpeed: 0.1
+  catchUpColumnSpeed: 0.4
   catchUpColumnDistance: 0.15
   betweenCarDistances: 0.1
   maxColumnSize: 5
@@ -112,8 +113,6 @@ MonoBehaviour:
   creatingColumnConfirmation_Wait_Timeout: 1
   updateCarDataInCentralAgent_Timeout: 1
   updateCarBehind_Timeout: 0.5
-  timeout: 1
-  timer: 0
 --- !u!1 &3163854421694993006
 GameObject:
   m_ObjectHideFlags: 0
