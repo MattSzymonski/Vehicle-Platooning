@@ -92,6 +92,7 @@ MonoBehaviour:
     followAgentName: 
     behindAgentName: 
   followingAgentTargetNodeName: 
+  lastCommonColumnNodeName: 
   columnCarsNames: []
   columnJoinRadius: 1
   reachDestinationRadius: 0.3
@@ -207,7 +208,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 454e7eec5950c7f4fa89fd4ee4408df2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  laneRandomizationRange: {x: 0.6, y: 2}
+  laneRandomizationRange: {x: 0.6, y: 2.5}
   laneRandomizationSmoothness: 3
   baseLaneRandomization: 0
   currentLaneRandomization: 0

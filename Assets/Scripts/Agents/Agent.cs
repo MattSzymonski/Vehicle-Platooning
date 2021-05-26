@@ -106,46 +106,5 @@ public abstract class Agent: MonoBehaviour {
         {
             return null;
         }
-
-
-
-
-  //      string sender = Message.GetSender();
-  //      //He would only attend to the message if he did not send it himself and if the message was to the agent
-  //      if (sender != gameObject.name){
-  //          string receptor = Message.GetReceiver();
-  //          if (receptor == gameObject.name || receptor == "all"){
-  //              string performative = Message.GetPerformative();
-  //              string content = Message.GetContent();
-  //              switch (performative){
-		//			case "Inform":
-  //                      ProcessInform(content, sender);
-		//				break;
-		//			case "Query":
-  //                      ProcessQuery(content, sender);
-		//				break;
-		//			case "Request":
-  //                      ProcessRequest(content, sender);
-		//				break;
-  //                  case "aAccept":
-  //                      ProcessAccept(content, sender);
-  //                      break;
-  //                  case "Refuse":
-  //                      ProcessRefuse(content, sender);
-  //                      break;
-  //              }
-		//	}
-		//}
 	}
-
-    //Process the information received by a message of type inform
-    //abstract protected void ProcessInform(string content, string sender);
-    ////Process the information received by a message of type query
-    //abstract protected void ProcessQuery(string content, string sender);
-    ////Process the information received by a message of type request
-    //abstract protected void ProcessRequest(string content, string sender);
-    ////Process the information received by a message of type accept
-    //abstract protected void ProcessAccept(string content, string sender);
-    ////Process the information received by a message of type refuse
-    //abstract protected void ProcessRefuse(string content, string sender);
 }

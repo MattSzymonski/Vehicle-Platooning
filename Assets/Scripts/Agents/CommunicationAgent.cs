@@ -38,7 +38,7 @@ public class CommunicationAgent : Agent
     [ReadOnly] public ColumnData currentColumnData; // Data about the column in which car is moving (sent by CommunicationAgent of column leader car)
     [ReadOnly] public Vector3? target; // Data about target to which car should be moving to keep column formation (sent by CommunicationAgent of car in front)
     [ReadOnly] public string followingAgentTargetNodeName; // Next node on agent's that this agent follows path
-    
+    [ReadOnly] public string lastCommonColumnNodeName = "";
     [ReadOnly] public List<string> columnCarsNames; // Only for leader
 
     private CarAgent carAgent;
@@ -282,6 +282,7 @@ public class CommunicationAgent : Agent
                 {
                     currentColumnData = JsonUtility.FromJson<ColumnData>(receiveContent.contentDetails); // Receive and store info about this column
                     isInColumn = true;
+                    lastCommonColumnNodeName = LastCommonNodeOnPath();
                     state = CommunicationAgentState.MovingInColumn;
                     creatingColumnConfirmation_Wait_Timer = 0;
                         
@@ -419,6 +420,7 @@ public class CommunicationAgent : Agent
                     currentColumnData = JsonUtility.FromJson<ColumnData>(receiveContent.contentDetails); // Receive and store info about this column
                     isInColumn = true;
                     columnsInProximity.Clear();
+                    lastCommonColumnNodeName = LastCommonNodeOnPath();
                     state = CommunicationAgentState.MovingInColumn;
 
                     return;
@@ -470,7 +472,7 @@ public class CommunicationAgent : Agent
             };
             string contentDetails = JsonUtility.ToJson(columnCreateData);
             string content = Utils.CreateContent(SystemAction.CommunicationAgent_CreateColumn, contentDetails);
-            lonelyCarsInProximity = lonelyCarsInProximity.GetRange(0, maxColumnSize); // Limit number of cars in column
+            lonelyCarsInProximity = lonelyCarsInProximity.Count() > maxColumnSize - 1 ? lonelyCarsInProximity.GetRange(0, maxColumnSize - 1) : lonelyCarsInProximity; // Limit number of cars in column
             foreach (var agent in lonelyCarsInProximity)
             {
                 base.SendMessage(Peformative.Propose.ToString(), content, agentName, agent);
@@ -499,7 +501,6 @@ public class CommunicationAgent : Agent
                 {
                     columnCarsNames.Add(agentName); // Add self to list of cars in column
 
-
                     for (int i = 0; i < pendingAcceptingCars.Count; i++)
                     {
                         ColumnData columnData = new ColumnData()
@@ -526,7 +527,7 @@ public class CommunicationAgent : Agent
                         followAgentName = "",
                         behindAgentName = columnCarsNames[1]
                     };
-
+                    lastCommonColumnNodeName = currentColumnData.pathNodesNames[currentColumnData.pathNodesNames.Count - 1];
                     pendingAcceptingCars.Clear();
                     creatingColumn_Wait_Timer = 0;
                     state = CommunicationAgentState.MovingInColumn;
@@ -614,6 +615,7 @@ public class CommunicationAgent : Agent
                                 currentColumnData = null;
                                 isInColumn = false;
                                 columnCarsNames.Clear();
+                                lastCommonColumnNodeName = "";
                                 state = CommunicationAgentState.ColumnCreateProposal_Wait;
 
                                 return;
@@ -664,9 +666,6 @@ public class CommunicationAgent : Agent
                         }
                     }
                 }
-
-                // Slow down if some car is far behind
-                // TODO
 
                 carAgent.SetTarget(carAgent.GetCurrentTargetNodePosition()); // Just follow its path, node by node because for the leader there is no agent in front to follow
                 carAgent.SetSpeed(columnSpeed);
@@ -720,6 +719,7 @@ public class CommunicationAgent : Agent
                     if (message.GetPerformative() == Peformative.Inform.ToString())
                     {
                         currentColumnData = JsonUtility.FromJson<ColumnData>(receiveContent.contentDetails);
+                        lastCommonColumnNodeName = LastCommonNodeOnPath(); // Recalculate last common node
                     }
                 }
                 
@@ -736,6 +736,7 @@ public class CommunicationAgent : Agent
                             isInColumn = false;
                             currentColumnData = null;
                             columnCarsNames.Clear();
+                            lastCommonColumnNodeName = "";
                             state = CommunicationAgentState.ColumnCreateProposal_Wait;
                             return;
                         }
@@ -830,40 +831,80 @@ public class CommunicationAgent : Agent
             }
         }
 
-        // Reach target leave column and end
+        // Reach current target
         {
             if (!setupStates.Contains(state)) // Is not in any setup state
             {
-                float distanceToDestination = Vector3.Distance(carAgent.GetCarPosition(), carAgent.GetDestinationPosition().Value);
-
-                if (distanceToDestination < reachDestinationRadius)
+                float distanceToCurrentTargetNode = Vector3.Distance(carAgent.GetCarPosition(), carAgent.GetCurrentTargetNodePosition());
+                if (distanceToCurrentTargetNode < reachDestinationRadius)
                 {
-                    if (state == CommunicationAgentState.MovingInColumn)
+                    if (carAgent.GetCurrentTargetNodeName() == carAgent.GetDestinationNodeName()) // Reaching destination, leave column and end ride
                     {
-                        // Hand over the leadership to car behind
-                        if (isColumnLeader)
+                        if (state == CommunicationAgentState.MovingInColumn)
                         {
-                            StringList stringList = new StringList() { list = columnCarsNames };
+                            // Hand over the leadership to car behind
+                            if (isColumnLeader)
+                            {
+                                StringList stringList = new StringList() { list = columnCarsNames };
 
-                            string contentDetails = JsonUtility.ToJson(stringList);
-                            string content = Utils.CreateContent(SystemAction.CommunicationAgent_LeaveColumn_TransferLeadership, contentDetails);
-                            base.SendMessage(Peformative.Request.ToString(), content, agentName, currentColumnData.behindAgentName);
+                                string contentDetails = JsonUtility.ToJson(stringList);
+                                string content = Utils.CreateContent(SystemAction.CommunicationAgent_LeaveColumn_TransferLeadership, contentDetails);
+                                base.SendMessage(Peformative.Request.ToString(), content, agentName, currentColumnData.behindAgentName);
+                            }
+                            // Notify leader about leaving
+                            else
+                            {
+                                string content = Utils.CreateContent(SystemAction.CommunicationAgent_LeaveColumn_NotifyLeader, "");
+                                base.SendMessage(Peformative.Inform.ToString(), content, agentName, currentColumnData.leaderName);
+                            }
                         }
-                        // Notify leader about leaving
-                        else
+
+                        // Deregister agent in CentralAgent
                         {
-                            string content = Utils.CreateContent(SystemAction.CommunicationAgent_LeaveColumn_NotifyLeader, "");
-                            base.SendMessage(Peformative.Inform.ToString(), content, agentName, currentColumnData.leaderName);
+                            string content = Utils.CreateContent(SystemAction.CommunicationAgent_UnregisterInCentralAgent, "");
+                            base.SendMessage(Peformative.Request.ToString(), content, agentName, centralAgentName);
+                        }
+
+                        carAgent.EndRide();
+                    }
+                    // Reaching other node
+                    else 
+                    {
+                        if (carAgent.GetCurrentTargetNodeName() == lastCommonColumnNodeName) // Reaching node last common node with column, leave column and go other side
+                        {
+                            // Hand over the leadership to car behind
+                            if (isColumnLeader)
+                            {
+                                StringList stringList = new StringList() { list = columnCarsNames };
+
+                                string contentDetails = JsonUtility.ToJson(stringList);
+                                string content1 = Utils.CreateContent(SystemAction.CommunicationAgent_LeaveColumn_TransferLeadership, contentDetails);
+                                base.SendMessage(Peformative.Request.ToString(), content1, agentName, currentColumnData.behindAgentName);
+
+                                isColumnLeader = false;
+                                isInColumn = false;
+                                currentColumnData = null;
+                                columnCarsNames.Clear();
+                                lastCommonColumnNodeName = "";
+                            }
+                            // Just leave column
+                            else
+                            {
+                                string content = Utils.CreateContent(SystemAction.CommunicationAgent_LeaveColumn_NotifyLeader, "");
+                                base.SendMessage(Peformative.Inform.ToString(), content, agentName, currentColumnData.leaderName);
+
+                                isInColumn = false;
+                                currentColumnData = null;
+                                columnCarsNames.Clear();
+                                lastCommonColumnNodeName = "";
+                            }
+                            
+                            state = CommunicationAgentState.ColumnCreateProposal_Wait;
+
+                            return;
                         }
                     }
 
-                    // Deregister agent in CentralAgent
-                    {
-                        string content = Utils.CreateContent(SystemAction.CommunicationAgent_UnregisterInCentralAgent, "");
-                        base.SendMessage(Peformative.Request.ToString(), content, agentName, centralAgentName);
-                    }
-
-                    carAgent.EndRide();
                 }
             }
         }
@@ -902,5 +943,18 @@ public class CommunicationAgent : Agent
         }
     }
 
-   
+    string LastCommonNodeOnPath()
+    {
+        var path = carAgent.GetPathNodesNames();
+        string result = "";
+        for (int i = 0; i < path.Count; i++)
+        {
+            if (currentColumnData.pathNodesNames.Contains(path[i]))
+            {
+                result = path[i];
+            }   
+        }
+
+        return result;
+    }
 }

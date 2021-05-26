@@ -59,7 +59,6 @@ public class CarAgent : MonoBehaviour
 
     void Update()
     {
-        DrawPath();
         Move();
     }
 
@@ -107,29 +106,7 @@ public class CarAgent : MonoBehaviour
 
                 if (state == CarAgentState.SystemGuidedMoving)
                 {
-
-
-
-                    //if (currentTargetNode.name == carInFrontCurrentNodeName) // Target column car is on the same edge, so just follow it
-                    //{
-                    //    //target = carInFrontPosition;
-                    //}
-                    //else // Target column car is NOT on the same edge or there is no car in front (this car is column leader), so go using nodes, till on same edge
-                    //{
-                    //    target = currentTargetNode.transform.position;
-                    //}
-
-
-
-                  
-
-
-
                     currentSpeed = systemSpeed;
-
-                  //  currentSpeed = baseSpeed; // !!!!!!!
-
-
                 }
                 transform.position = Vector3.MoveTowards(transform.position, target.Value, Time.deltaTime * currentSpeed);
             }
@@ -145,14 +122,6 @@ public class CarAgent : MonoBehaviour
         currentTargetNode = path.nodes[0];
         target = currentTargetNode.transform.position;
         destinationPosition = navSystem.GetNodePosition(destinationNodeName).Value;
-    }
-
-    private void DrawPath()
-    {
-        //for (int u = 0; u < path.nodes.Count - 1; u++)
-        //{
-        //    Debug.DrawLine(path.nodes[u].transform.position + new Vector3(0, 0.1f, 0), path.nodes[u + 1].transform.position + new Vector3(0, 0.1f, 0), Color.green);
-        //}
     }
 
     private void OnMouseDown()

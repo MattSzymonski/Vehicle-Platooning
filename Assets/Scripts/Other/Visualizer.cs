@@ -85,6 +85,14 @@ public class Visualizer : MonoBehaviour
                 lineRenderer.SetPosition(0, transform.position);
                 lineRenderer.SetPosition(1, GameObject.Find(communicationAgent.currentColumnData.followAgentName).transform.GetChild(0).position);
             }
+            else
+            {
+                lineRenderer.enabled = false;
+            }
+        }
+        else
+        {
+            lineRenderer.enabled = false;
         }
     }
 

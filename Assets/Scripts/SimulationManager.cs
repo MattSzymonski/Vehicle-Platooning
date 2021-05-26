@@ -59,7 +59,7 @@ public class SimulationManager : MonoBehaviour
         {
             if(spawn_Timer > spawn_Timeout)
             {
-                if (spawnedCount < 1)
+                //if (spawnedCount < 1)
                 {
                     SpawnCarAtRandomNode();
                 }
