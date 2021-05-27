@@ -33,6 +33,7 @@ public class Visualizer : MonoBehaviour
         model = this.gameObject;
 
         baseLaneRandomization = Random.Range(laneRandomizationRange.x, laneRandomizationRange.y);
+        currentLaneRandomization = baseLaneRandomization;
 
         lineRenderer = gameObject.AddComponent<LineRenderer>();
         lineRenderer.enabled = false;  
@@ -91,9 +92,18 @@ public class Visualizer : MonoBehaviour
         {
             if (!communicationAgent.isColumnLeader)
             {
-                lineRenderer.enabled = true;
-                lineRenderer.SetPosition(0, transform.position);
-                lineRenderer.SetPosition(1, GameObject.Find(communicationAgent.currentColumnData.followAgentName).transform.GetChild(0).position);
+                var followAgent = GameObject.Find(communicationAgent.currentColumnData.followAgentName);
+
+                if (followAgent != null)
+                {
+                    lineRenderer.enabled = true;
+                    lineRenderer.SetPosition(0, transform.position);
+                    lineRenderer.SetPosition(1, followAgent.transform.GetChild(0).position);
+                }
+                else
+                {
+                    lineRenderer.enabled = false;
+                }
             }
             else
             {

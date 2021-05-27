@@ -104,7 +104,7 @@ MonoBehaviour:
   maxColumnSize: 5
   carAgentName: 
   carAgentPassword: 
-  registeringInCentralAgent_Wait_Timeout: 1
+  registeringInCentralAgent_Wait_Timeout: 10
   columnSearching_Wait_Timeout: 0.8
   joiningColumn_Wait_Timeout: 1
   creatingColumn_Wait_Timeout: 0.8

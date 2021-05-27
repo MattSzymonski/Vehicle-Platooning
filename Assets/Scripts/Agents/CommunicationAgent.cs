@@ -62,7 +62,7 @@ public class CommunicationAgent : Agent
     List<string> lonelyCarsInProximity; // Names of communication agents not in columns found when asking central agent
 
     [Header("Update Settings")]
-    public float registeringInCentralAgent_Wait_Timeout = 1.0f;
+    public float registeringInCentralAgent_Wait_Timeout = 10.0f;
     float registeringInCentralAgent_Wait_Timer = 0.0f;
 
     public float columnSearching_Wait_Timeout = 1.0f;
