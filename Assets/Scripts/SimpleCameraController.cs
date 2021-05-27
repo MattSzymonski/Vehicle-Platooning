@@ -61,6 +61,8 @@ namespace UnityTemplateProjects
         [Tooltip("Exponential boost factor on translation, controllable by mouse wheel.")]
         public float boost = 3.5f;
 
+        public float speed = 1.0f;
+
         [Tooltip("Time it takes to interpolate camera position 99% of the way to the target."), Range(0.001f, 1f)]
         public float positionLerpTime = 0.2f;
 
@@ -210,7 +212,7 @@ namespace UnityTemplateProjects
             boost += GetBoostFactor();
             translation *= Mathf.Pow(2.0f, boost);
 
-            m_TargetCameraState.Translate(translation);
+            m_TargetCameraState.Translate(translation * speed);
 
             // Framerate-independent interpolation
             // Calculate the lerp amount, such that we get 99% of the way to our target in the specified time

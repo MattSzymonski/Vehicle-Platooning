@@ -3,9 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// This is logic that alters car model position so it looks like it is following different lanes of the same highway
+// This script is responsible for visualization details only
 // It does this skipping message passing logic! But it is only for visualization purposes, not simulation!
-// So do not treat it as a part of simulation!
+// It does not impact the simulation in any way!
+
 public class Visualizer : MonoBehaviour
 {
     CommunicationAgent communicationAgent;
@@ -67,7 +68,16 @@ public class Visualizer : MonoBehaviour
             }
             else // Set randomization to the same as leader of column
             {
-                currentLaneRandomization = GameObject.Find(communicationAgent.currentColumnData.leaderName).transform.GetChild(0).GetComponent<Visualizer>().currentLaneRandomization;
+                var leaderAgent = GameObject.Find(communicationAgent.currentColumnData.leaderName);
+                if (leaderAgent != null)
+                {
+                    currentLaneRandomization = leaderAgent.transform.GetChild(0).GetComponent<Visualizer>().currentLaneRandomization;
+                }
+                else
+                {
+                    currentLaneRandomization = baseLaneRandomization;
+                }
+                
             }
         }
 

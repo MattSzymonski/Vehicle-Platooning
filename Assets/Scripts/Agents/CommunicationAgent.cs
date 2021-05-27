@@ -49,10 +49,10 @@ public class CommunicationAgent : Agent
     public float reachDestinationRadius = 0.3f;
     public string centralAgentName; // Entered via UI by user (mobile app or on car's cockpit screen)
     public float columnSpeed = 0.2f;
-    public float waitForColumnSpeed = 0.05f; // Speed of car when it needs to wait to be overtook by the column it joined
+    public float waitForColumnSpeed = 0.1f; // Speed of car when it needs to wait to be overtook by the column it joined
     public float catchUpColumnSpeed = 0.4f; // Speed of car when it is further than catchUpColumnDistance from car it is following, if distance is smaller then column speed is used
-    public float catchUpColumnDistance = 0.3f; 
-    public float betweenCarDistances = 0.3f; // Distance from car in direction oposite to its driving direction (it should be similar to catchUpColumnDistance)
+    public float catchUpColumnDistance = 0.15f; 
+    public float betweenCarDistances = 0.1f; // Distance from car in direction oposite to its driving direction (it should be similar to catchUpColumnDistance)
     public int maxColumnSize = 5; // Maximal number of cars in column
 
     [HideInInspector] public string carAgentName = ""; // Entered via UI by user (mobile app or on car's cockpit screen)
@@ -62,29 +62,29 @@ public class CommunicationAgent : Agent
     List<string> lonelyCarsInProximity; // Names of communication agents not in columns found when asking central agent
 
     [Header("Update Settings")]
-    public float registeringInCentralAgent_Wait_Timeout = 3.0f;
+    public float registeringInCentralAgent_Wait_Timeout = 1.0f;
     float registeringInCentralAgent_Wait_Timer = 0.0f;
 
-    public float columnSearching_Wait_Timeout = 3.0f;
+    public float columnSearching_Wait_Timeout = 1.0f;
     float columnSearching_Wait_Timer = 0.0f;
 
-    public float joiningColumn_Wait_Timeout = 3.0f;
+    public float joiningColumn_Wait_Timeout = 1.0f;
     float joiningColumn_Wait_Timer = 0.0f;
 
-    public float creatingColumn_Wait_Timeout = 3.0f;
+    public float creatingColumn_Wait_Timeout = 1.0f;
     float creatingColumn_Wait_Timer = 0.0f;
 
-    public float creatingColumnProposal_Wait_Timeout = 3.0f;
-    public float creatingColumnProposal_Wait_Timeout_Randomizer = 0.0f;
+    public float creatingColumnProposal_Wait_Timeout = 1.0f;
+    public float creatingColumnProposal_Wait_Timeout_Randomizer = 3.0f;
     float creatingColumnProposal_Wait_Timer = 0.0f;
 
-    public float creatingColumnConfirmation_Wait_Timeout = 3.0f;
+    public float creatingColumnConfirmation_Wait_Timeout = 1.0f;
     float creatingColumnConfirmation_Wait_Timer = 0.0f;
 
-    public float updateCarDataInCentralAgent_Timeout = 3.0f;
+    public float updateCarDataInCentralAgent_Timeout = 1.0f;
     float updateCarDataInCentralAgent_Timer = 0.0f;
 
-    public float updateCarBehind_Timeout = 3.0f;
+    public float updateCarBehind_Timeout = 1.0f;
     float updateCarBehind_Timer = 0.0f;
 
     CommunicationAgentState[] setupStates = { 
@@ -103,7 +103,9 @@ public class CommunicationAgent : Agent
         columnCarsNames = new List<string>();
         pendingAcceptingCars = new List<string>();
         columnsInProximity = new List<(string, int)>();
-        lonelyCarsInProximity = new List<string>();  
+        lonelyCarsInProximity = new List<string>();
+
+        creatingColumnProposal_Wait_Timer = Random.Range(0.0f, creatingColumnProposal_Wait_Timeout); // Randomize timer starting point to avoid stagnation when multiple agents are created in the same time
     }
 
     void Update() // Each frame
@@ -388,7 +390,6 @@ public class CommunicationAgent : Agent
             // Wait for some time for answers then try to send once again
             if (columnSearching_Wait_Timer >= columnSearching_Wait_Timeout)
             {
-                DebugLog("No possibility to join");
                 state = CommunicationAgentState.ColumnCreateProposal_Wait;
                 columnSearching_Wait_Timer = 0;
             }
@@ -502,7 +503,7 @@ public class CommunicationAgent : Agent
                     columnCarsNames.Add(agentName); // Add self to list of cars in column
 
                     for (int i = 0; i < pendingAcceptingCars.Count; i++)
-                    {
+                    {            
                         ColumnData columnData = new ColumnData()
                         {
                             leaderName = agentName,
@@ -536,6 +537,7 @@ public class CommunicationAgent : Agent
                 }
                 else
                 {
+
                     creatingColumn_Wait_Timer = 0;
                     state = CommunicationAgentState.ColumnCreateProposal_Wait;
 
