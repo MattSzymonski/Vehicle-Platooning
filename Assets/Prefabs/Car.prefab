@@ -105,7 +105,7 @@ MonoBehaviour:
   carAgentName: 
   carAgentPassword: 
   registeringInCentralAgent_Wait_Timeout: 10
-  columnSearching_Wait_Timeout: 0.8
+  columnSearching_Wait_Timeout: 1.3
   joiningColumn_Wait_Timeout: 1
   creatingColumn_Wait_Timeout: 0.8
   creatingColumnProposal_Wait_Timeout: 1

@@ -110,7 +110,7 @@ public class SimulationManager : MonoBehaviour
 
         // Setup CommunicationAgent
         var communicationAgent = newCar.GetComponent<CommunicationAgent>();
-        communicationAgent.agentName = "CommunicationAgent_" + spawnedCount.ToString(); //System.Guid.NewGuid().ToString();
+        communicationAgent.agentName = "CommunicationAgent_" + spawnedCount.ToString();
         communicationAgent.columnJoinRadius = 1.0f;
         communicationAgent.reachDestinationRadius = 0.1f;
         communicationAgent.centralAgentName = "CentralAgent";
