@@ -18,17 +18,28 @@ public class AgentPlatform : MonoBehaviour
         registeredAgents.Add(agentName, agent);
         return (true, this);
     }
-   
-    void Update()
+
+    public bool DeregisterAgent(string agentName)
     {
-        
+        registeredAgents.Remove(agentName);
+        return true;
     }
 
     public bool ForwardMessage(Message message)
     {
         // Find receiver and forward message to it
-        var receiver = registeredAgents[message.GetReceiver()];
-        receiver.EnqueueMessage(message);
-        return true;
+        Agent receiver = null;
+        registeredAgents.TryGetValue(message.GetReceiver(), out receiver);
+        if (receiver != null) 
+        {
+            receiver.EnqueueMessage(message);
+            return true;
+        }
+        return false;
+    }
+
+    public Dictionary<string, Agent> GetRegisteredAgents()
+    {
+        return registeredAgents;
     }
 }

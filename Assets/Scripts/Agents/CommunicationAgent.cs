@@ -861,10 +861,15 @@ public class CommunicationAgent : Agent
                             }
                         }
 
-                        // Deregister agent in CentralAgent
+                        // Deregister agent in Central Agent
                         {
                             string content = Utils.CreateContent(SystemAction.CommunicationAgent_UnregisterInCentralAgent, "");
                             base.SendMessage(Peformative.Request.ToString(), content, agentName, centralAgentName);
+                        }
+
+                        // Deregister agent in Agent Platform
+                        {
+                            base.DeregisterInAgentPlatform();
                         }
 
                         carAgent.EndRide();

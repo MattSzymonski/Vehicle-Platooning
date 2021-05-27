@@ -5,11 +5,18 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
+[System.Serializable]
+public class SpawningWave {
+    public GameObject startNode;
+    public int carsToSpawn;
+}
+
 public class SimulationManager : MonoBehaviour
 {
     [Header("Info")]
     [ReadOnly] public float speedMultiplier = 1.0f;
     [ReadOnly] public bool spawning;
+    [ReadOnly] public List<SpawningWave> spawningWaves;
 
     [Header("Settings")]
     public int carCount;
@@ -22,55 +29,111 @@ public class SimulationManager : MonoBehaviour
     public GameObject agentsParent;
     public AgentPlatform agentPlatform;
 
+    [Header("UI")]
+    public Text simulationSpeedText;
+    public Text agentsCountText;
+    public Text spawnButtonText;
+
+
     [Header("Car Agent Settings")]
     public float arrivalDistance = 0.1f;
     [MinMaxSlider(0.0f, 10.0f)] public Vector2 speedRange;
     public float columnJoinRadius = 1.0f;
 
+    [Header("Spawning Settings")]
+    public int minCarsInSpawningWave = 1;
+    public int maxCarsInSpawningWave = 4;
 
-    public float spawn_Timeout = 1;
-    public float spawn_Timer;
+    public float waveSpawn_Timeout = 1.0f;
+    [ReadOnly] public float waveSpawn_Timer;
+
+    public float spawn_Timeout = 1.0f;
+    [ReadOnly] public float spawn_Timer;
+
+
+
     int spawnedCount = 0;
 
-    [Header("UI")]
-    public Text simulationSpeedText;
+    
     
     void Start()
     {
         Time.timeScale = speedMultiplier;
+        spawningWaves = new List<SpawningWave>();
         SpawnCentralAgent();
     }
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
+        carCount = agentPlatform.GetRegisteredAgents().Count();
+        agentsCountText.text = carCount.ToString();
+
+        if (Input.GetKeyDown(KeyCode.T))
         {
             spawning = !spawning;
         }
 
-        if (Input.GetKeyDown(KeyCode.C))
+        if (spawning)
+        {
+            SimulatedSpawning1_SpawnWave();
+        }
+        SimulatedSpawning1_ProcessSpawningWaves();
+
+
+
+        if (Input.GetKeyDown(KeyCode.Y))
         {
             SpawnCarAtRandomNode();
         }
 
         SpawnAgentsManually();
+    }
 
-        if (spawning)
+
+
+    void SimulatedSpawning1_SpawnWave()
+    {
+        if (waveSpawn_Timer > waveSpawn_Timeout)
         {
-            if(spawn_Timer > spawn_Timeout)
+            if (carCount < 100)
             {
-                //if (spawnedCount < 1)
-                {
-                    SpawnCarAtRandomNode();
-                }
+                GameObject startNode = navSystem.nodes[Random.Range(0, navSystem.nodes.Count)];
+                spawningWaves.Add(new SpawningWave() { startNode = startNode, carsToSpawn = Random.Range(1, maxCarsInSpawningWave) });
+                waveSpawn_Timer = 0;
+            }
+        }
+        else
+        {
+            waveSpawn_Timer++;
+        }
+    }
 
-                spawn_Timer = 0;
-            }
-            else
+    void SimulatedSpawning1_ProcessSpawningWaves()
+    {
+        if (spawn_Timer > spawn_Timeout)
+        {
+            for (int i = spawningWaves.Count - 1; i >= 0; i--)
             {
-                spawn_Timer++;
+                if (spawningWaves[i].carsToSpawn > 0)
+                {
+                    GameObject destinationNode = spawningWaves[i].startNode;
+                    while (destinationNode == spawningWaves[i].startNode)
+                        destinationNode = navSystem.nodes[Random.Range(minCarsInSpawningWave, navSystem.nodes.Count)];
+                    SpawnCar(spawningWaves[i].startNode, destinationNode);
+                    spawningWaves[i].carsToSpawn--;
+                }
+                else
+                {
+                    spawningWaves.RemoveAt(i);
+                }
             }
-        }    
+            spawn_Timer = Random.Range(0.0f, 1.0f) > 0.5f ? 0 : 0.5f; // Randomize timer
+            //spawn_Timer = 0;
+        }
+        else
+        {
+            spawn_Timer++;
+        }
     }
 
     void SpawnCentralAgent()
@@ -156,6 +219,12 @@ public class SimulationManager : MonoBehaviour
         speedMultiplier = Mathf.Max(0.25f, speedMultiplier - 0.25f);
         simulationSpeedText.text = speedMultiplier.ToString();
         Time.timeScale = speedMultiplier;
+    }
+
+    public void SpawnButtonToggle()
+    {
+        spawning = !spawning;
+        spawnButtonText.text = spawning ? "Stop" : "Start";
     }
 
 }

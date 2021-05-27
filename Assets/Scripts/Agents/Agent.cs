@@ -48,6 +48,13 @@ public abstract class Agent: MonoBehaviour {
         return response.Item1;
     }
 
+    protected bool DeregisterInAgentPlatform()
+    {
+        // In real life this function will try to connect to agent server via some protocol
+        var response = GameObject.Find("AgentPlatform").GetComponent<AgentPlatform>().DeregisterAgent(agentName);
+        return response;
+    }
+
     /// <summary>
     /// Create a new message
     /// </summary>
