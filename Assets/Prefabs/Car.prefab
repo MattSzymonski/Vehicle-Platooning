@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 3163854420955403253}
   - component: {fileID: 3163854420955403257}
   - component: {fileID: -6104353349130268377}
+  - component: {fileID: 4574394878013008468}
   m_Layer: 0
   m_Name: Car
   m_TagString: Untagged
@@ -84,6 +85,7 @@ MonoBehaviour:
   state: 0
   registeredInCentralAgent: 0
   isInColumn: 0
+  isStrictlyInColumn: 0
   isColumnLeader: 0
   currentColumnData:
     leaderName: 
@@ -109,10 +111,25 @@ MonoBehaviour:
   joiningColumn_Wait_Timeout: 1
   creatingColumn_Wait_Timeout: 0.8
   creatingColumnProposal_Wait_Timeout: 1
-  creatingColumnProposal_Wait_Timeout_Randomizer: 3
   creatingColumnConfirmation_Wait_Timeout: 1
   updateCarDataInCentralAgent_Timeout: 1
   updateCarBehind_Timeout: 0.4
+--- !u!114 &4574394878013008468
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3163854420955403258}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 472a730ab9345d042a8ac2f8948e1350, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  baseConsumption: 1
+  airResistanceFactor: 0.4
+  currentConsumption: 0
+  totalFuelUsed: 0
 --- !u!1 &3163854421694993006
 GameObject:
   m_ObjectHideFlags: 0
