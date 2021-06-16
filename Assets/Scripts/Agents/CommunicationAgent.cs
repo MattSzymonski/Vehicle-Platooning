@@ -962,10 +962,13 @@ public class CommunicationAgent : Agent
 
     void DebugLog(string message)
     {
+        #if UNITY_EDITOR
         if (Selection.Contains(gameObject))
         {
             Debug.Log(agentName + ": " + message);
         }
+        #endif
+
     }
 
     string LastCommonNodeOnPath()

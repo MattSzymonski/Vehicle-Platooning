@@ -222,10 +222,12 @@ public class VehicleAgent : MonoBehaviour
 
     void DebugLog(string message)
     {
+        #if UNITY_EDITOR
         if (Selection.Contains(gameObject))
         {
             Debug.Log("Vehicle " + gameObject.name + ": " + message);
         }
+        #endif
     }
 
 

@@ -15,8 +15,12 @@ public class Fuel : MonoBehaviour
 	[ReadOnly] public float totalFuelUsed;
 	public float distanceBetweenVehiclesInPlatoon = 1;
 
+	public float xxx;
+
 	void Start()
 	{
+		xxx = (-Mathf.Log(10 + 1) * 25 + 68) / 100;
+
 		vehicleAgent = transform.GetComponent<VehicleAgent>();
 		communicationAgent = transform.GetComponent<CommunicationAgent>();
 	}
