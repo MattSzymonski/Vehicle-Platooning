@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: -6104353349130268377}
   - component: {fileID: 4574394878013008468}
   m_Layer: 0
-  m_Name: Car
+  m_Name: Vehicle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -47,14 +47,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   state: 2
-  columnState: 2
+  platoonState: 2
   startNodeName: 
   destinationNodeName: 
   destinationPosition:
     Value: {x: 0, y: 0, z: 0}
     HasValue: 0
   path:
-    nodes: []
+    nodes:
+    - {fileID: 0}
   target:
     Value: {x: 0, y: 0, z: 0}
     HasValue: 0
@@ -82,36 +83,36 @@ MonoBehaviour:
   agentPlatform: {fileID: 0}
   state: 0
   registeredInCentralAgent: 0
-  isInColumn: 0
-  isStrictlyInColumn: 0
-  isColumnLeader: 0
-  currentColumnData:
+  isInPlatoon: 0
+  isStrictlyInPlatoon: 0
+  isPlatoonLeader: 0
+  currentPlatoonData:
     leaderName: 
     pathNodesNames: []
     followAgentName: 
     behindAgentName: 
   followingAgentTargetNodeName: 
-  lastCommonColumnNodeName: 
-  columnCarsNames: []
-  columnJoinRadius: 1
+  lastCommonPlatoonNodeName: 
+  platoonVehiclesNames: []
+  platoonJoinRadius: 1
   reachDestinationRadius: 0.1
   centralAgentName: CentralAgent
-  columnSpeed: 100
-  waitForColumnSpeed: 70
-  catchUpColumnSpeed: 160
-  catchUpColumnDistance: 0.15
-  betweenCarDistances: 0.1
-  maxColumnSize: 5
-  carAgentName: 
-  carAgentPassword: 
+  platoonSpeed: 100
+  waitForPlatoonSpeed: 70
+  catchUpPlatoonSpeed: 160
+  catchUpPlatoonDistance: 0.15
+  betweenVehicleDistances: 0.1
+  maxPlatoonSize: 5
+  vehicleAgentName: 
+  vehicleAgentPassword: 
   registeringInCentralAgent_Wait_Timeout: 10
-  columnSearching_Wait_Timeout: 1.3
-  joiningColumn_Wait_Timeout: 1
-  creatingColumn_Wait_Timeout: 0.8
-  creatingColumnProposal_Wait_Timeout: 1
-  creatingColumnConfirmation_Wait_Timeout: 1
-  updateCarDataInCentralAgent_Timeout: 1
-  updateCarBehind_Timeout: 0.4
+  platoonSearching_Wait_Timeout: 1.3
+  joiningPlatoon_Wait_Timeout: 1
+  creatingPlatoon_Wait_Timeout: 0.8
+  creatingPlatoonProposal_Wait_Timeout: 1
+  creatingPlatoonConfirmation_Wait_Timeout: 1
+  updateVehicleDataInCentralAgent_Timeout: 1
+  updateVehicleBehind_Timeout: 0.4
 --- !u!114 &4574394878013008468
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -126,7 +127,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentConsumption: 0
   totalFuelUsed: 0
-  distanceBetweenCarsInPlatoon: 1
+  distanceBetweenVehiclesInPlatoon: 1
 --- !u!1 &3163854421694993006
 GameObject:
   m_ObjectHideFlags: 0
@@ -226,4 +227,4 @@ MonoBehaviour:
   baseLaneRandomization: 0
   currentLaneRandomization: 0
   rotationSmoothness: 4.5
-  columnLineDebugMaterial: {fileID: 2100000, guid: 4d65f8eb25904be4d8ec78bd9e26f10f, type: 2}
+  platoonLineDebugMaterial: {fileID: 2100000, guid: 4d65f8eb25904be4d8ec78bd9e26f10f, type: 2}

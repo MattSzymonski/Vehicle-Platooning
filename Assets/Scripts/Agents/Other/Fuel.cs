@@ -6,18 +6,18 @@ using UnityEngine;
 public class Fuel : MonoBehaviour
 {
 	//public float baseConsumption = 1.0f;
-	//public float airResistanceFactor = 0.4f; // Percentage of fuel consumption decrease when car is driving strictly in column
+	//public float airResistanceFactor = 0.4f; // Percentage of fuel consumption decrease when vehicle is driving strictly in platoon
 
 	[ReadOnly] public float currentConsumption;
-	CarAgent carAgent;
+	VehicleAgent vehicleAgent;
 	CommunicationAgent communicationAgent;
 
 	[ReadOnly] public float totalFuelUsed;
-	public float distanceBetweenCarsInPlatoon = 1;
+	public float distanceBetweenVehiclesInPlatoon = 1;
 
 	void Start()
 	{
-		carAgent = transform.GetComponent<CarAgent>();
+		vehicleAgent = transform.GetComponent<VehicleAgent>();
 		communicationAgent = transform.GetComponent<CommunicationAgent>();
 	}
 
@@ -30,15 +30,15 @@ public class Fuel : MonoBehaviour
 
 		// Air resistance, speed, fuel consumption
 		// https://www.semanticscholar.org/paper/A-General-Simulation-Framework-for-Modeling-and-of-Deng/646204958f06527a480c9d3c3018b161e361fab7 Figure 1				
-		if (communicationAgent.isColumnLeader) // Leader
+		if (communicationAgent.isPlatoonLeader) // Leader
 		{
 			airResistanceDropInFunctionOfDistanceBetweenVehiclesInPlatoon = 1;
 		}
 		else // Drafting (behind other vehicle)
 		{
-			if (communicationAgent.isStrictlyInColumn)
+			if (communicationAgent.isStrictlyInPlatoon)
 			{
-				airResistanceDropInFunctionOfDistanceBetweenVehiclesInPlatoon = (-Mathf.Log(distanceBetweenCarsInPlatoon) * 25 + 68) / 100;
+				airResistanceDropInFunctionOfDistanceBetweenVehiclesInPlatoon = (-Mathf.Log(communicationAgent.betweenVehicleDistances + 1) * 25 + 68) / 100;
 			}
 			else
 			{
@@ -48,7 +48,7 @@ public class Fuel : MonoBehaviour
 
 		// Engine, speed, fuel consumption
 		// https://www.researchgate.net/publication/311703927_Urban_Transportation_Solutions_for_the_CO2_Emissions_Reduction_Contributions Figure 4
-		float fuelConsumptionInFunctionOfSpeed = 0.0019f * Mathf.Pow(carAgent.currentSpeed, 2) - 0.2506f * carAgent.currentSpeed + 13.74f; // For 100% air resistance
+		float fuelConsumptionInFunctionOfSpeed = 0.0019f * Mathf.Pow(vehicleAgent.currentSpeed, 2) - 0.2506f * vehicleAgent.currentSpeed + 13.74f; // For 100% air resistance
 
 		currentConsumption = fuelConsumptionInFunctionOfSpeed * airResistanceDropInFunctionOfDistanceBetweenVehiclesInPlatoon;
 

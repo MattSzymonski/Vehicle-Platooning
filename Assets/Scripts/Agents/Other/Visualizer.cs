@@ -10,7 +10,7 @@ using UnityEngine;
 public class Visualizer : MonoBehaviour
 {
     CommunicationAgent communicationAgent;
-    CarAgent carAgent;
+    VehicleAgent vehicleAgent;
     GameObject model;
 
     [Header("Lane Randomization")]
@@ -22,14 +22,14 @@ public class Visualizer : MonoBehaviour
     [Header("Rotation")]
     public float rotationSmoothness = 2.5f; // Rotation in movement direction turn speed
 
-    [Header("Column Line")]
-    public Material columnLineDebugMaterial;
+    [Header("Platoon Line")]
+    public Material platoonLineDebugMaterial;
     LineRenderer lineRenderer;
 
     void Start()
     {
         communicationAgent = transform.parent.GetComponent<CommunicationAgent>();
-        carAgent = transform.parent.GetComponent<CarAgent>();
+        vehicleAgent = transform.parent.GetComponent<VehicleAgent>();
         model = this.gameObject;
 
         baseLaneRandomization = Random.Range(laneRandomizationRange.x, laneRandomizationRange.y);
@@ -37,7 +37,7 @@ public class Visualizer : MonoBehaviour
 
         lineRenderer = gameObject.AddComponent<LineRenderer>();
         lineRenderer.enabled = false;  
-        lineRenderer.material = columnLineDebugMaterial;
+        lineRenderer.material = platoonLineDebugMaterial;
         lineRenderer.startWidth = 0.02f;
         lineRenderer.endWidth = 0.02f;
         lineRenderer.SetPosition(0, new Vector3(0, -10, 0));
@@ -48,12 +48,12 @@ public class Visualizer : MonoBehaviour
     {
         RotateTowardsMoveDirection();
         RandomizeLane();
-        DrawColumnLine();
+        DrawPlatoonLine();
     }
 
     void RotateTowardsMoveDirection()
     {
-        var lookPos = carAgent.GetCurrentTargetNodePosition() - transform.parent.position;
+        var lookPos = vehicleAgent.GetCurrentTargetNodePosition() - transform.parent.position;
         lookPos.y = 0;
         var rotation = Quaternion.LookRotation(lookPos);
         transform.parent.rotation = Quaternion.Slerp(transform.parent.rotation, rotation, Time.deltaTime * rotationSmoothness);
@@ -61,15 +61,15 @@ public class Visualizer : MonoBehaviour
 
     void RandomizeLane()
     {
-        if (communicationAgent.isInColumn) // Is in column
+        if (communicationAgent.isInPlatoon) // Is in platoon
         {
-            if (communicationAgent.isColumnLeader)
+            if (communicationAgent.isPlatoonLeader)
             {
                 currentLaneRandomization = baseLaneRandomization;
             }
-            else // Set randomization to the same as leader of column
+            else // Set randomization to the same as leader of platoon
             {
-                var leaderAgent = GameObject.Find(communicationAgent.currentColumnData.leaderName);
+                var leaderAgent = GameObject.Find(communicationAgent.currentPlatoonData.leaderName);
                 if (leaderAgent != null)
                 {
                     currentLaneRandomization = leaderAgent.transform.GetChild(0).GetComponent<Visualizer>().currentLaneRandomization;
@@ -86,13 +86,13 @@ public class Visualizer : MonoBehaviour
         model.transform.localPosition = Vector3.Lerp(transform.localPosition, targetModelPosition, Time.deltaTime * laneRandomizationSmoothness);
     }
 
-    void DrawColumnLine()
+    void DrawPlatoonLine()
     {
-        if (communicationAgent.isInColumn) // Is in column
+        if (communicationAgent.isInPlatoon) // Is in platoon
         {
-            if (!communicationAgent.isColumnLeader)
+            if (!communicationAgent.isPlatoonLeader)
             {
-                var followAgent = GameObject.Find(communicationAgent.currentColumnData.followAgentName);
+                var followAgent = GameObject.Find(communicationAgent.currentPlatoonData.followAgentName);
 
                 if (followAgent != null)
                 {
@@ -118,7 +118,7 @@ public class Visualizer : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        Gizmos.DrawWireSphere(transform.position, communicationAgent.columnJoinRadius);
+        Gizmos.DrawWireSphere(transform.position, communicationAgent.platoonJoinRadius);
 
         if (communicationAgent.target.HasValue)
         {

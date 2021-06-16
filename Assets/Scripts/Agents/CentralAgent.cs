@@ -6,13 +6,12 @@ using System.Linq;
 
 public class CentralAgent : Agent
 {
-    public Dictionary<string, CarUpdateData> communicationAgents;
-    public float columnJoinRadius = 2;
-
+    public Dictionary<string, VehicleUpdateData> communicationAgents;
+  
     void Start()
     {
         name = agentName;
-        communicationAgents = new Dictionary<string, CarUpdateData>();
+        communicationAgents = new Dictionary<string, VehicleUpdateData>();
         RegisterInAgentPlatform();           
     }
 
@@ -59,29 +58,30 @@ public class CentralAgent : Agent
             {
                 if (message.GetPerformative() == Peformative.Inform.ToString())
                 {
-                    CarUpdateData carUpdateData = JsonUtility.FromJson<CarUpdateData>(receiveContent.contentDetails);
-                    communicationAgents[message.GetSender()] = carUpdateData; // Update data in dictionary
+                    VehicleUpdateData vehicleUpdateData = JsonUtility.FromJson<VehicleUpdateData>(receiveContent.contentDetails);
+                    communicationAgents[message.GetSender()] = vehicleUpdateData; // Update data in dictionary
 
                     return;
                 }
             }
 
-            // Process nearby cars (column and lonely cars) query
-            if (message != null && receiveContent.action == SystemAction.CommunicationAgent_NearbyCars.ToString())
+            // Process nearby vehicles (platoon and lonely vehicles) query
+            if (message != null && receiveContent.action == SystemAction.CommunicationAgent_NearbyVehicles.ToString())
             {
                 if (message.GetPerformative() == Peformative.Query.ToString())
                 {
+                    float platoonJoinRadius = float.Parse(receiveContent.contentDetails);
                     string sender = message.GetSender();
 
-                    // Get cars nearby which are in certain radius
+                    // Get vehicles nearby which are in certain radius
                     List<string> agents = communicationAgents.Keys.Where(x => (
                         communicationAgents[x] != null &&
                         x != sender &&
-                        Vector3.Distance(communicationAgents[sender].position, communicationAgents[x].position) < columnJoinRadius)
+                        Vector3.Distance(communicationAgents[sender].position, communicationAgents[x].position) < platoonJoinRadius)
                     ).ToList();
 
                     // List of names of agents (which are leaders), their paths, current target node and distance to sender
-                    List<CarDataBasic> columnLeaderCommunicationAgents = agents.Where(x => communicationAgents[x].isColumnLeader == true).Select(x => new CarDataBasic
+                    List<VehicleDataBasic> platoonLeaderCommunicationAgents = agents.Where(x => communicationAgents[x].isPlatoonLeader == true).Select(x => new VehicleDataBasic
                     {
                         name = x,
                         pathNodesNames = communicationAgents[x].pathNodeNames,
@@ -90,7 +90,7 @@ public class CentralAgent : Agent
                     }).ToList();
 
                     // List of names of agents (which are lonely), their paths, current target node and distance to sender
-                    List<CarDataBasic> lonelyCommunicationAgents = agents.Where(x => communicationAgents[x].inColumn == false).Select(x => new CarDataBasic
+                    List<VehicleDataBasic> lonelyCommunicationAgents = agents.Where(x => communicationAgents[x].inPlatoon == false).Select(x => new VehicleDataBasic
                     {
                         name = x,
                         pathNodesNames = communicationAgents[x].pathNodeNames,
@@ -98,14 +98,14 @@ public class CentralAgent : Agent
                         distance = Vector3.Distance(communicationAgents[x].position, communicationAgents[sender].position)
                     }).ToList();
 
-                    ColumnQueryData columnQueryData = new ColumnQueryData()
+                    PlatoonQueryData platoonQueryData = new PlatoonQueryData()
                     {
-                        columnLeaderCommunicationAgents = columnLeaderCommunicationAgents,
+                        platoonLeaderCommunicationAgents = platoonLeaderCommunicationAgents,
                         lonelyCommunicationAgents = lonelyCommunicationAgents
                     };
 
                     // Send message
-                    string content = Utils.CreateContent(SystemAction.CommunicationAgent_NearbyCars, JsonUtility.ToJson(columnQueryData));
+                    string content = Utils.CreateContent(SystemAction.CommunicationAgent_NearbyVehicles, JsonUtility.ToJson(platoonQueryData));
                     base.SendMessage(Peformative.Inform.ToString(), content, agentName, message.GetSender());
 
                     return;

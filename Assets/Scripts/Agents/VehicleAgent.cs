@@ -7,13 +7,13 @@ using UnityEditor;
 using UnityEngine;
 using static Utils;
 
-public enum CarAgentState {
+public enum VehicleAgentState {
     SelfGuidedMoving,
     SystemGuidedMoving,
     Idling
 }
 
-public enum CarAgentColumnState
+public enum VehicleAgentPlatoonState
 {
     CatchingUp,
     Waiting,
@@ -21,13 +21,13 @@ public enum CarAgentColumnState
 }
 
 
-// In this simulation the CarAgent communicates with CommunicationAgent using exposed system API, CommunicationAgent is a program installed in system computer
+// In this simulation the VehicleAgent communicates with CommunicationAgent using exposed system API, CommunicationAgent is a program installed in system computer
 
 [ExecuteInEditMode]
-public class CarAgent : MonoBehaviour
+public class VehicleAgent : MonoBehaviour
 {
-    [ReadOnly] public CarAgentState state = CarAgentState.Idling;
-    [ReadOnly] public CarAgentColumnState columnState = CarAgentColumnState.Normal;
+    [ReadOnly] public VehicleAgentState state = VehicleAgentState.Idling;
+    [ReadOnly] public VehicleAgentPlatoonState platoonState = VehicleAgentPlatoonState.Normal;
     [ReadOnly] public string startNodeName; // Entered by user via UI screen
     [ReadOnly] public string destinationNodeName; // Entered by user via UI screen
     [ReadOnly] public NullableVector3 destinationPosition;
@@ -53,7 +53,7 @@ public class CarAgent : MonoBehaviour
     {
         navSystem = GameObject.Find("Map").GetComponent<NavSystem>();
         FindPath();
-        state = CarAgentState.SelfGuidedMoving;
+        state = VehicleAgentState.SelfGuidedMoving;
     }
 
     void Update()
@@ -68,7 +68,7 @@ public class CarAgent : MonoBehaviour
 
     private void Move()
     {
-        if (state != CarAgentState.Idling)
+        if (state != VehicleAgentState.Idling)
         {
             if (target.HasValue)
             {
@@ -90,7 +90,7 @@ public class CarAgent : MonoBehaviour
                     }
                 }
 
-                if (state == CarAgentState.SelfGuidedMoving)
+                if (state == VehicleAgentState.SelfGuidedMoving)
                 {
                     currentSpeed = baseSpeed;
                     target = currentTargetNode.transform.position;
@@ -102,7 +102,7 @@ public class CarAgent : MonoBehaviour
                     }
                 }
 
-                if (state == CarAgentState.SystemGuidedMoving)
+                if (state == VehicleAgentState.SystemGuidedMoving)
                 {
                     currentSpeed = systemSpeed;
                 }
@@ -136,19 +136,19 @@ public class CarAgent : MonoBehaviour
         if (status)
         {
             currentSpeed = systemSpeed;
-            state = CarAgentState.SystemGuidedMoving;
+            state = VehicleAgentState.SystemGuidedMoving;
         }
         else
         {
             // Recalculate path
             currentSpeed = baseSpeed;
-            state = CarAgentState.SelfGuidedMoving;
+            state = VehicleAgentState.SelfGuidedMoving;
         }
     }
 
-    public void SetColumnState(CarAgentColumnState state)
+    public void SetPlatoonState(VehicleAgentPlatoonState state)
     {
-        columnState = state;
+        platoonState = state;
     }
 
     public string GetDestinationNodeName()
@@ -174,7 +174,7 @@ public class CarAgent : MonoBehaviour
     public void DisconnectCommunicationAgent()
     {
         communicationAgent = null;
-        state = CarAgentState.SelfGuidedMoving;     
+        state = VehicleAgentState.SelfGuidedMoving;     
     }
 
     public Vector3 GetTarget()
@@ -182,7 +182,7 @@ public class CarAgent : MonoBehaviour
         return target;
     }
 
-    public CarAgent ConnectCommunicationAgent(CommunicationAgent communicationAgent)
+    public VehicleAgent ConnectCommunicationAgent(CommunicationAgent communicationAgent)
     {
         this.communicationAgent = communicationAgent;
         return this;
@@ -208,7 +208,7 @@ public class CarAgent : MonoBehaviour
         this.target = target;
     }
 
-    public Vector3 GetCarPosition()
+    public Vector3 GetVehiclePosition()
     {
         return transform.position;
     }
@@ -224,7 +224,7 @@ public class CarAgent : MonoBehaviour
     {
         if (Selection.Contains(gameObject))
         {
-            Debug.Log("Car " + gameObject.name + ": " + message);
+            Debug.Log("Vehicle " + gameObject.name + ": " + message);
         }
     }
 

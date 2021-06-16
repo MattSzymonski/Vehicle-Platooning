@@ -4324,11 +4324,9 @@ MonoBehaviour:
   spawnedCount: 0
   speedMultiplier: 1
   spawning: 0
-  spawningWaves: []
   totalFuelUsed: 0
-  carCount: 0
-  columnDebugMaterial: {fileID: 2100000, guid: 4d65f8eb25904be4d8ec78bd9e26f10f, type: 2}
-  carAgentPrefab: {fileID: 3163854420955403258, guid: fe9ab8d89deafab459c62a2e462f2132, type: 3}
+  platoonDebugMaterial: {fileID: 2100000, guid: 4d65f8eb25904be4d8ec78bd9e26f10f, type: 2}
+  vehicleAgentPrefab: {fileID: 3163854420955403258, guid: fe9ab8d89deafab459c62a2e462f2132, type: 3}
   centralAgentPrefab: {fileID: 1307310837473570823, guid: 8aab1993016434c4bb87d7f42643ef7b, type: 3}
   navSystem: {fileID: 1743745208}
   agentsParent: {fileID: 452271392}
@@ -4339,8 +4337,8 @@ MonoBehaviour:
   spawnButtonText: {fileID: 651550431}
   fuelUsedText: {fileID: 1869420110}
   speedRange: {x: 70, y: 120}
-  minCarsInSpawningWave: 1
-  maxCarsInSpawningWave: 4
+  minVehiclesInSpawningWave: 1
+  maxVehiclesInSpawningWave: 4
   waveSpawn_Timeout: 50
   spawn_Timeout: 50
 --- !u!4 &2011462005

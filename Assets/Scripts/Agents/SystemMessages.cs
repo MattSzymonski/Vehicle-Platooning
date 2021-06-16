@@ -11,26 +11,26 @@ public class Content
 }
 
 [Serializable]
-public class CarUpdateData // For updating data in centralAgent (communicationAgent-centralAgent)
+public class VehicleUpdateData // For updating data in centralAgent (communicationAgent-centralAgent)
 {
     public Vector3 position;
-    public bool inColumn;
-    public bool isColumnLeader;
+    public bool inPlatoon;
+    public bool isPlatoonLeader;
     public string destinationNodeName;
     public List<string> pathNodeNames;
     public string currentTargetNodeName;
-    public List<string> columnCarsNames; // Only for leader
+    public List<string> platoonVehiclesNames; // Only for leader
 }
 
 [Serializable]
-public class ColumnQueryData // For asking about nearby columns and lonely cars (communicationAgent-centralAgent)
+public class PlatoonQueryData // For asking about nearby platoons and lonely vehicles (communicationAgent-centralAgent)
 {
-    public List<CarDataBasic> columnLeaderCommunicationAgents;
-    public List<CarDataBasic> lonelyCommunicationAgents;
+    public List<VehicleDataBasic> platoonLeaderCommunicationAgents;
+    public List<VehicleDataBasic> lonelyCommunicationAgents;
 }
 
 [Serializable]
-public class CarDataBasic
+public class VehicleDataBasic
 {
     public string name;
     public List<string> pathNodesNames;
@@ -39,7 +39,7 @@ public class CarDataBasic
 }
 
 [Serializable]
-public class ColumnData // For creating new column (send by leader to new member when it joins column or when leader is changing) (communicationAgent-communicationAgent)
+public class PlatoonData // For creating new platoon (send by leader to new member when it joins platoon or when leader is changing) (communicationAgent-communicationAgent)
 {
     public string leaderName;
     public List<string> pathNodesNames;
@@ -48,7 +48,7 @@ public class ColumnData // For creating new column (send by leader to new member
 }
 
 [Serializable]
-public class ColumnCreateData // For creating new column (send by leader to possible member as invitation) (communicationAgent-communicationAgent)
+public class PlatoonCreateData // For creating new platoon (send by leader to possible member as invitation) (communicationAgent-communicationAgent)
 {
     public string leaderName;
     public List<string> pathNodesNames;
@@ -56,13 +56,13 @@ public class ColumnCreateData // For creating new column (send by leader to poss
 }
 
 [Serializable]
-public class StringList // For passing columnCarsNames when handing over the leadership (communicationAgent-communicationAgent)
+public class StringList // For passing platoonVehiclesNames when handing over the leadership (communicationAgent-communicationAgent)
 {
     public List<string> list;
 }
 
 [Serializable]
-public class ColumnUpdateData // For intercolumn communication (communicationAgent-communicationAgent)
+public class PlatoonUpdateData // For interplatoon communication (communicationAgent-communicationAgent)
 {
     public Vector3 position;
     public string targetNodeName;

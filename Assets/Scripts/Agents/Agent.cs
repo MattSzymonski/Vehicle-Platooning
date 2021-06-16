@@ -17,14 +17,14 @@ public enum Peformative
 public enum SystemAction
 {
     CommunicationAgent_RegisterInCentralAgent,
-    CommunicationAgent_NearbyCars,
+    CommunicationAgent_NearbyVehicles,
     CommunicationAgent_UpdateInCentralAgent,
-    CommunicationAgent_UpdateCarBehind,
-    CommunicationAgent_UpdateColumn,
-    CommunicationAgent_JoinColumn,
-    CommunicationAgent_CreateColumn,
-    CommunicationAgent_LeaveColumn_TransferLeadership,
-    CommunicationAgent_LeaveColumn_NotifyLeader,
+    CommunicationAgent_UpdateVehicleBehind,
+    CommunicationAgent_UpdatePlatoon,
+    CommunicationAgent_JoinPlatoon,
+    CommunicationAgent_CreatePlatoon,
+    CommunicationAgent_LeavePlatoon_TransferLeadership,
+    CommunicationAgent_LeavePlatoon_NotifyLeader,
     CommunicationAgent_UnregisterInCentralAgent
 }
 
