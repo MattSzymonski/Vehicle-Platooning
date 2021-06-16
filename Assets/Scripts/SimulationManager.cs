@@ -19,14 +19,13 @@ public class SimulationManager : MonoBehaviour
     [ReadOnly] public int spawnedCount = 0;
     [ReadOnly] public float speedMultiplier = 1.0f;
     [ReadOnly] public bool spawning;
-    [ReadOnly] public List<SpawningWave> spawningWaves;
+    List<SpawningWave> spawningWaves;
     [ReadOnly] public float totalFuelUsed;
 
-    [Header("Settings")]
-    public int carCount;
-    public Material columnDebugMaterial;
-
+    int carCount;
+    
     [Header("References")]
+    public Material columnDebugMaterial;
     public GameObject carAgentPrefab;
     public GameObject centralAgentPrefab;
     public NavSystem navSystem;
