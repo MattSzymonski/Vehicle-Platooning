@@ -47,11 +47,11 @@ public class CommunicationAgent : Agent
 
     [Header("Settings")]
     public float columnJoinRadius = 1.0f;
-    public float reachDestinationRadius = 0.3f;
-    public string centralAgentName; // Entered via UI by user (mobile app or on car's cockpit screen)
-    public float columnSpeed = 0.2f;
-    public float waitForColumnSpeed = 0.1f; // Speed of car when it needs to wait to be overtook by the column it joined
-    public float catchUpColumnSpeed = 0.4f; // Speed of car when it is further than catchUpColumnDistance from car it is following, if distance is smaller then column speed is used
+    public float reachDestinationRadius = 0.1f;
+    public string centralAgentName = "CentralAgent"; // This is supposed to be entered via UI by user (mobile app or on car's cockpit screen)
+    public float columnSpeed = 100.0f;
+    public float waitForColumnSpeed = 70.0f; // Speed of car when it needs to wait to be overtook by the column it joined
+    public float catchUpColumnSpeed = 160.0f; // Speed of car when it is further than catchUpColumnDistance from car it is following, if distance is smaller then column speed is used
     public float catchUpColumnDistance = 0.15f; 
     public float betweenCarDistances = 0.1f; // Distance from car in direction oposite to its driving direction (it should be similar to catchUpColumnDistance)
     public int maxColumnSize = 5; // Maximal number of cars in column
@@ -66,13 +66,13 @@ public class CommunicationAgent : Agent
     public float registeringInCentralAgent_Wait_Timeout = 10.0f;
     float registeringInCentralAgent_Wait_Timer = 0.0f;
 
-    public float columnSearching_Wait_Timeout = 1.0f;
+    public float columnSearching_Wait_Timeout = 1.3f;
     float columnSearching_Wait_Timer = 0.0f;
 
     public float joiningColumn_Wait_Timeout = 1.0f;
     float joiningColumn_Wait_Timer = 0.0f;
 
-    public float creatingColumn_Wait_Timeout = 1.0f;
+    public float creatingColumn_Wait_Timeout = 0.8f;
     float creatingColumn_Wait_Timer = 0.0f;
 
     public float creatingColumnProposal_Wait_Timeout = 1.0f;
@@ -85,7 +85,7 @@ public class CommunicationAgent : Agent
     public float updateCarDataInCentralAgent_Timeout = 1.0f;
     float updateCarDataInCentralAgent_Timer = 0.0f;
 
-    public float updateCarBehind_Timeout = 1.0f;
+    public float updateCarBehind_Timeout = 0.4f;
     float updateCarBehind_Timer = 0.0f;
 
     CommunicationAgentState[] setupStates = { 

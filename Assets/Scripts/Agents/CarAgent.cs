@@ -38,17 +38,16 @@ public class CarAgent : MonoBehaviour
     [ReadOnly] public GameObject currentTargetNode;
     [ReadOnly] public Vector3 currentTargetNodeNamePosition;
 
-    [ReadOnly] public float currentSpeed = 1;
-    [ReadOnly] public float baseSpeed = 0.2f;
-    [ReadOnly] public float systemSpeed = 0.2f;
+    [ReadOnly] public float currentSpeed = 0;
+    public float baseSpeed = 100.0f;
+    public float systemSpeed = 100.0f;
 
-    [ReadOnly] public float arrivalDistance = 0.1f;
+    public float arrivalDistance = 0.1f;
 
     NavSystem navSystem;
 
-
     // System guided mode
-    [ReadOnly] public CommunicationAgent communicationAgent;
+    private CommunicationAgent communicationAgent;
 
     void Start()
     {
@@ -62,10 +61,9 @@ public class CarAgent : MonoBehaviour
         Move();
     }
 
-    public void SetUp(float baseSpeed, float arrivalDistance)
+    public void SetUp(float baseSpeed)
     {
         this.baseSpeed = baseSpeed;
-        this.arrivalDistance = arrivalDistance;
     }
 
     private void Move()
@@ -108,7 +106,8 @@ public class CarAgent : MonoBehaviour
                 {
                     currentSpeed = systemSpeed;
                 }
-                transform.position = Vector3.MoveTowards(transform.position, target.Value, Time.deltaTime * currentSpeed);
+
+                transform.position = Vector3.MoveTowards(transform.position, target.Value, Time.deltaTime * currentSpeed / 500.0f);
             }
 
 

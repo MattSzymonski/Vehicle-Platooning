@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 [System.Serializable]
@@ -15,6 +16,7 @@ public class SpawningWave {
 public class SimulationManager : MonoBehaviour
 {
     [Header("Info")]
+    [ReadOnly] public int spawnedCount = 0;
     [ReadOnly] public float speedMultiplier = 1.0f;
     [ReadOnly] public bool spawning;
     [ReadOnly] public List<SpawningWave> spawningWaves;
@@ -31,6 +33,7 @@ public class SimulationManager : MonoBehaviour
     public GameObject agentsParent;
     public AgentPlatform agentPlatform;
     public CentralAgent centralAgent;
+    private EventSystem eventSystem;
 
     [Header("UI")]
     public Text simulationSpeedText;
@@ -38,33 +41,23 @@ public class SimulationManager : MonoBehaviour
     public Text spawnButtonText;
     public Text fuelUsedText;
 
-
     [Header("Car Agent Settings")]
-    public float arrivalDistance = 0.1f;
-    [MinMaxSlider(0.0f, 10.0f)] public Vector2 speedRange;
-    public float columnJoinRadius = 1.0f;
+    [MinMaxSlider(20.0f, 200.0f)] public Vector2 speedRange = new Vector2(70.0f, 120.0f);
 
     [Header("Spawning Settings")]
     public int minCarsInSpawningWave = 1;
     public int maxCarsInSpawningWave = 4;
 
-    public float waveSpawn_Timeout = 1.0f;
-    [ReadOnly] public float waveSpawn_Timer;
+    public float waveSpawn_Timeout = 50.0f;
+    float waveSpawn_Timer;
 
-    public float spawn_Timeout = 1.0f;
-    [ReadOnly] public float spawn_Timer;
+    public float spawn_Timeout = 50.0f;
+    float spawn_Timer;
 
-
-
-
-    int spawnedCount = 0;
-
-    private EventSystem _eventSystem;
 
     void Start()
     {
-        _eventSystem = GameObject.Find("EventSystem").GetComponent<EventSystem>();
-
+        eventSystem = GameObject.Find("EventSystem").GetComponent<EventSystem>();
         Time.timeScale = speedMultiplier;
         spawningWaves = new List<SpawningWave>();
         SpawnCentralAgent();
@@ -75,28 +68,20 @@ public class SimulationManager : MonoBehaviour
         carCount = agentPlatform.GetRegisteredAgents().Count();
         agentsCountText.text = carCount.ToString();
 
-        if (Input.GetKeyDown(KeyCode.T))
-        {
-            spawning = !spawning;
-        }
-
         if (spawning)
-            SimulatedSpawning1_SpawnWave();
-
-        SimulatedSpawning1_ProcessSpawningWaves();
-
-
-
-        if (Input.GetKeyDown(KeyCode.Y))
-            SpawnCarAtRandomNode();
-
+        {
+            SimulatedSpawning_SpawnWave();
+        }
+           
+        SimulatedSpawning_ProcessSpawningWaves();
         SpawnAgentsManually();
-
         CalculateTotalFuelUsed();
-
     }
 
-  
+    public void ResetScene()
+    {
+        SceneManager.LoadScene(0);
+    }
 
     void CalculateTotalFuelUsed()
     {
@@ -111,7 +96,7 @@ public class SimulationManager : MonoBehaviour
         fuelUsedText.text = totalFuelUsed.ToString();
     }
 
-    void SimulatedSpawning1_SpawnWave()
+    void SimulatedSpawning_SpawnWave()
     {
         if (waveSpawn_Timer > waveSpawn_Timeout)
         {
@@ -128,7 +113,7 @@ public class SimulationManager : MonoBehaviour
         }
     }
 
-    void SimulatedSpawning1_ProcessSpawningWaves()
+    void SimulatedSpawning_ProcessSpawningWaves()
     {
         if (spawn_Timer > spawn_Timeout)
         {
@@ -148,7 +133,6 @@ public class SimulationManager : MonoBehaviour
                 }
             }
             spawn_Timer = Random.Range(0.0f, 1.0f) > 0.5f ? 0 : 0.5f; // Randomize timer
-            //spawn_Timer = 0;
         }
         else
         {
@@ -164,7 +148,6 @@ public class SimulationManager : MonoBehaviour
         // Setup CentralAgent
         centralAgent = newCentralAgent.GetComponent<CentralAgent>();
         centralAgent.agentName = "CentralAgent";
-
     }
 
     void SpawnCarAtRandomNode()
@@ -191,15 +174,13 @@ public class SimulationManager : MonoBehaviour
         var carAgent = newCar.GetComponent<CarAgent>();
         carAgent.startNodeName = startNode.name;
         carAgent.destinationNodeName = destinationNode.name;
-        carAgent.SetUp(baseSpeed, arrivalDistance);
+        carAgent.SetUp(baseSpeed);
 
         // Setup CommunicationAgent
         if (platooningSystemEnabled)
         {
             var communicationAgent = newCar.GetComponent<CommunicationAgent>();
             communicationAgent.agentName = "CommunicationAgent_" + spawnedCount.ToString();
-            communicationAgent.columnJoinRadius = 1.0f;
-            communicationAgent.reachDestinationRadius = 0.1f;
             communicationAgent.centralAgentName = "CentralAgent";
             communicationAgent.agentPlatform = agentPlatform;
         }
@@ -213,7 +194,7 @@ public class SimulationManager : MonoBehaviour
 
     void SpawnAgentsManually()
     {
-        if (_eventSystem.IsPointerOverGameObject())
+        if (eventSystem.IsPointerOverGameObject())
             return;
 
         if (Input.GetMouseButtonDown(0))
@@ -241,14 +222,14 @@ public class SimulationManager : MonoBehaviour
 
     public void SimulationSpeedUp()
     {
-        speedMultiplier = Mathf.Min(speedMultiplier + 0.25f, 5.0f);
+        speedMultiplier = Mathf.Min(speedMultiplier + 0.5f, 10.0f);
         simulationSpeedText.text = speedMultiplier.ToString();
         Time.timeScale = speedMultiplier;
     }
 
     public void SimulationSpeedDown()
     {
-        speedMultiplier = Mathf.Max(0.0f, speedMultiplier - 0.25f);
+        speedMultiplier = Mathf.Max(0.0f, speedMultiplier - 0.5f);
         simulationSpeedText.text = speedMultiplier.ToString();
         Time.timeScale = speedMultiplier;
     }
@@ -321,7 +302,5 @@ public class SimulationManager : MonoBehaviour
         yield return new WaitForSeconds(1.0f);
         SpawnCar(navSystem.nodes.Find(o => o.name == "Node (2)"), navSystem.nodes.Find(o => o.name == "Node (4)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f), false);
     }
-
-
 }
 

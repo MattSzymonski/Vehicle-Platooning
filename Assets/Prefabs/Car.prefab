@@ -54,19 +54,17 @@ MonoBehaviour:
     Value: {x: 0, y: 0, z: 0}
     HasValue: 0
   path:
-    nodes:
-    - {fileID: 0}
+    nodes: []
   target:
     Value: {x: 0, y: 0, z: 0}
     HasValue: 0
   currentTargetNodeName: 
   currentTargetNode: {fileID: 0}
   currentTargetNodeNamePosition: {x: 0, y: 0, z: 0}
-  currentSpeed: 1
-  baseSpeed: 0.2
-  systemSpeed: 0.2
+  currentSpeed: 0
+  baseSpeed: 100
+  systemSpeed: 100
   arrivalDistance: 0.1
-  communicationAgent: {fileID: 0}
 --- !u!114 &-6104353349130268377
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -96,11 +94,11 @@ MonoBehaviour:
   lastCommonColumnNodeName: 
   columnCarsNames: []
   columnJoinRadius: 1
-  reachDestinationRadius: 0.3
+  reachDestinationRadius: 0.1
   centralAgentName: CentralAgent
-  columnSpeed: 0.2
-  waitForColumnSpeed: 0.1
-  catchUpColumnSpeed: 0.4
+  columnSpeed: 100
+  waitForColumnSpeed: 70
+  catchUpColumnSpeed: 160
   catchUpColumnDistance: 0.15
   betweenCarDistances: 0.1
   maxColumnSize: 5
@@ -126,10 +124,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 472a730ab9345d042a8ac2f8948e1350, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseConsumption: 1
-  airResistanceFactor: 0.4
   currentConsumption: 0
   totalFuelUsed: 0
+  distanceBetweenCarsInPlatoon: 1
 --- !u!1 &3163854421694993006
 GameObject:
   m_ObjectHideFlags: 0

@@ -29,7 +29,10 @@ public class CentralAgent : Agent
                 if (message.GetPerformative() == Peformative.Request.ToString())
                 {
                     // Add new agent
-                    communicationAgents.Add(message.GetSender(), null);
+                    if (!communicationAgents.ContainsKey(message.GetSender()))
+                    {
+                        communicationAgents.Add(message.GetSender(), null);
+                    }
 
                     // Send message
                     string content = Utils.CreateContent(SystemAction.CommunicationAgent_RegisterInCentralAgent, "");
