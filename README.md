@@ -32,17 +32,15 @@ Built version offers:
 - Spawning vehicles in the cities by clicking near them with LMB (they will move to the randomly selected city)
 - Constantly spawning vehicles in randomly selected cities (they will move to the randomly selected city)
 - Running predefined deterministic scenarios:
-- Scenario 1
-<div style="padding-left: 30px;">
-3 agents start in red city, form a platoon, and move to cyan city.
-3 agents start in yellow city, form a platoon, move to the last common point which is magenta city, two of them go to blue city and one of them move cyan city.
-1 agent starts in green city move to red city where it joins platoon and move with it to magenta city and ends there.
+- Scenario 1 </br>
+  3 agents start in red city, form a platoon, and move to cyan city.
+  3 agents start in yellow city, form a platoon, move to the last common point which is magenta city, two of them go to blue city and one of them move cyan city.
+  1 agent starts in green city move to red city where it joins platoon and move with it to magenta city and ends there.
 
-</div>
-- Scenario 2
-<div style="padding-left: 30px;">
-Same as scenario 1 but with the platooning system disabled
-</div>
+
+- Scenario 2 </br>
+  Same as scenario 1 but with the platooning system disabled
+
 
 Fuel consumed by all vehicles is displayed on the user interface. 
 By running these two scenarios we can simulate the total fuel usage and see how big the increase in fuel efficiency thanks to implemented platooning system. 
