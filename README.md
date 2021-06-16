@@ -1,7 +1,7 @@
 # Vehicle Platooning
 
-Simulation of highway vehicle platooning using an agents system approach. 
-It is a part of the research paper [Link will be here]
+Simulation of highway vehicle platooning using an agents system approach. </br>
+It is a part of the research paper [Link will be here] </br>
 Vehicle platooning is a method for driving a group of vehicles together in a platoon to reduce fuel consumption and increase the capacity of highway roads.
 
 ### Agents
