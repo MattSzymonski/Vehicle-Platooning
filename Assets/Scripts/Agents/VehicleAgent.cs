@@ -26,6 +26,12 @@ public enum VehicleAgentPlatoonState
 [ExecuteInEditMode]
 public class VehicleAgent : MonoBehaviour
 {
+    [HideInInspector] public float simulationSpaceMultiplier = 0.01f; // To keep short distances in projection space and use real units in parameters we need to multiply real units by simulationSpace factor
+                                                                      // So if eg. reachDestinationRadius is 10[meters] in simulation space (when displayed on the scene it is reachDestinationRadius * simulationSpaceMultiplier = 0.1
+
+    [HideInInspector] public float simulationSpeedMultiplier = 0.002f; // To keep speeds at reasonable levels fitted for visualization we need to muliply real units by simulationSpeed factor
+                                                                       // So if eg. baseSpeed is 100[km/h] in simulation space (when moving on the scene it is baseSpeed * simulationSpeedMultiplier = 0.2
+
     [ReadOnly] public VehicleAgentState state = VehicleAgentState.Idling;
     [ReadOnly] public VehicleAgentPlatoonState platoonState = VehicleAgentPlatoonState.Normal;
     [ReadOnly] public string startNodeName; // Entered by user via UI screen
@@ -42,7 +48,7 @@ public class VehicleAgent : MonoBehaviour
     public float baseSpeed = 100.0f;
     public float systemSpeed = 100.0f;
 
-    public float arrivalDistance = 0.1f;
+    public float reachDestinationRadius = 10f; // Distance to target below which target is assumed as reached
 
     NavSystem navSystem;
 
@@ -72,7 +78,7 @@ public class VehicleAgent : MonoBehaviour
         {
             if (target.HasValue)
             {
-                if (Vector3.Distance(transform.position, currentTargetNode.transform.position) < arrivalDistance)
+                if (Vector3.Distance(transform.position, currentTargetNode.transform.position) < reachDestinationRadius * simulationSpaceMultiplier)
                 {
                     int indexOfCurrentNode = path.nodes.IndexOf(currentTargetNode);
                     if (indexOfCurrentNode < path.nodes.Count - 1)
@@ -96,7 +102,7 @@ public class VehicleAgent : MonoBehaviour
                     target = currentTargetNode.transform.position;
 
                     float distanceToDestination = Vector3.Distance(transform.position, destinationPosition.Value);
-                    if (distanceToDestination < arrivalDistance)
+                    if (distanceToDestination < reachDestinationRadius * simulationSpaceMultiplier)
                     {
                         EndRide();
                     }
@@ -107,7 +113,7 @@ public class VehicleAgent : MonoBehaviour
                     currentSpeed = systemSpeed;
                 }
 
-                transform.position = Vector3.MoveTowards(transform.position, target.Value, Time.deltaTime * currentSpeed / 500.0f);
+                transform.position = Vector3.MoveTowards(transform.position, target.Value, Time.deltaTime * currentSpeed * simulationSpeedMultiplier);
             }
 
 

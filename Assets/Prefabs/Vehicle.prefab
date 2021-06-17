@@ -46,6 +46,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af6d0bf5b08b9a940a40f4d66815ed3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  simulationSpaceMultiplier: 0.01
+  simulationSpeedMultiplier: 0.002
   state: 2
   platoonState: 2
   startNodeName: 
@@ -54,8 +56,7 @@ MonoBehaviour:
     Value: {x: 0, y: 0, z: 0}
     HasValue: 0
   path:
-    nodes:
-    - {fileID: 0}
+    nodes: []
   target:
     Value: {x: 0, y: 0, z: 0}
     HasValue: 0
@@ -65,7 +66,7 @@ MonoBehaviour:
   currentSpeed: 0
   baseSpeed: 100
   systemSpeed: 100
-  arrivalDistance: 0.1
+  reachDestinationRadius: 10
 --- !u!114 &-6104353349130268377
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -81,6 +82,7 @@ MonoBehaviour:
   agentName: NoName
   registeredInAgentPlatform: 0
   agentPlatform: {fileID: 0}
+  simulationSpaceMultiplier: 0.01
   state: 0
   registeredInCentralAgent: 0
   isInPlatoon: 0
@@ -94,14 +96,14 @@ MonoBehaviour:
   followingAgentTargetNodeName: 
   lastCommonPlatoonNodeName: 
   platoonVehiclesNames: []
-  platoonJoinRadius: 1
-  reachDestinationRadius: 0.1
+  platoonJoinRadius: 100
+  reachDestinationRadius: 10
   centralAgentName: CentralAgent
   platoonSpeed: 100
   waitForPlatoonSpeed: 70
   catchUpPlatoonSpeed: 160
-  catchUpPlatoonDistance: 0.15
-  betweenVehicleDistances: 0.1
+  catchUpPlatoonDistance: 15
+  betweenVehicleDistances: 10
   maxPlatoonSize: 5
   vehicleAgentName: 
   vehicleAgentPassword: 
@@ -126,8 +128,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentConsumption: 0
+  airResistanceDropInFunctionOfDistanceBetweenVehiclesInPlatoon: 1
   totalFuelUsed: 0
   distanceBetweenVehiclesInPlatoon: 1
+  xxx: 0
 --- !u!1 &3163854421694993006
 GameObject:
   m_ObjectHideFlags: 0

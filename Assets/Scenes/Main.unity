@@ -4325,7 +4325,6 @@ MonoBehaviour:
   speedMultiplier: 1
   spawning: 0
   totalFuelUsed: 0
-  platoonDebugMaterial: {fileID: 2100000, guid: 4d65f8eb25904be4d8ec78bd9e26f10f, type: 2}
   vehicleAgentPrefab: {fileID: 3163854420955403258, guid: fe9ab8d89deafab459c62a2e462f2132, type: 3}
   centralAgentPrefab: {fileID: 1307310837473570823, guid: 8aab1993016434c4bb87d7f42643ef7b, type: 3}
   navSystem: {fileID: 1743745208}

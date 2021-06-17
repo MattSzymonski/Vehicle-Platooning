@@ -28,6 +28,8 @@ public enum CommunicationAgentState
 
 public class CommunicationAgent : Agent
 {
+    [HideInInspector] public float simulationSpaceMultiplier = 0.01f; // To keep short distances in projection space and use real units in parameters we need to multiply real units by simulationSpace factor;
+
     [Header("General Info")]
     [ReadOnly] public CommunicationAgentState state = CommunicationAgentState.RegisteringInAgentPlatform;
     [ReadOnly] public bool registeredInCentralAgent;
@@ -46,14 +48,14 @@ public class CommunicationAgent : Agent
     private List<string> pendingAcceptingVehicles; // List of CommunicationAgents names that accepted platoon creation proposal
 
     [Header("Settings")]
-    public float platoonJoinRadius = 1.0f;
-    public float reachDestinationRadius = 0.1f;
+    public float platoonJoinRadius = 100f; // Radius of detecting other platoons in proximity
+    public float reachDestinationRadius = 10f; // Distance to target below which target is assumed as reached
     public string centralAgentName = "CentralAgent"; // This is supposed to be entered via UI by user (mobile app or on vehicle's cockpit screen)
-    public float platoonSpeed = 100.0f;
+    public float platoonSpeed = 100.0f; // Speed of driving in platoon
     public float waitForPlatoonSpeed = 70.0f; // Speed of vehicle when it needs to wait to be overtook by the platoon it joined
     public float catchUpPlatoonSpeed = 160.0f; // Speed of vehicle when it is further than catchUpPlatoonDistance from vehicle it is following, if distance is smaller then platoon speed is used
-    public float catchUpPlatoonDistance = 0.15f; 
-    public float betweenVehicleDistances = 0.1f; // Distance from vehicle in direction oposite to its driving direction (it should be similar to catchUpPlatoonDistance)
+    public float catchUpPlatoonDistance = 15f; // Distance to the vehicle that should be followed above which vehicle drives with catchUpPlatoonSpeed
+    public float betweenVehicleDistances = 10f; // Distance from vehicle in direction oposite to its driving direction (it should be similar to catchUpPlatoonDistance)
     public int maxPlatoonSize = 5; // Maximal number of vehicles in platoon
 
     [HideInInspector] public string vehicleAgentName = ""; // Entered via UI by user (mobile app or on vehicle's cockpit screen)
@@ -310,7 +312,7 @@ public class CommunicationAgent : Agent
         // Send query to Central Agent to find platoons and lonely vehicles in proximity
         if (state == CommunicationAgentState.PlatoonSearching_Send)
         {
-            string content = Utils.CreateContent(SystemAction.CommunicationAgent_NearbyVehicles, platoonJoinRadius.ToString());
+            string content = Utils.CreateContent(SystemAction.CommunicationAgent_NearbyVehicles, (platoonJoinRadius * simulationSpaceMultiplier).ToString());
             base.SendMessage(Peformative.Query.ToString(), content, agentName, centralAgentName);
             state = CommunicationAgentState.PlatoonSearching_Wait;
 
@@ -703,7 +705,7 @@ public class CommunicationAgent : Agent
                             {
                                 vehicleAgent.SetTarget(target.Value); // Follow agent
 
-                                if (Vector3.Distance(vehicleAgent.GetVehiclePosition(), target.Value) > catchUpPlatoonDistance)
+                                if (Vector3.Distance(vehicleAgent.GetVehiclePosition(), target.Value) > catchUpPlatoonDistance * simulationSpaceMultiplier)
                                 {
                                     vehicleAgent.SetSpeed(catchUpPlatoonSpeed);
                                     isStrictlyInPlatoon = false;
@@ -801,7 +803,7 @@ public class CommunicationAgent : Agent
 
                     PlatoonUpdateData platoonUpdateData = new PlatoonUpdateData()
                     {
-                        position = vehicleAgent.GetVehiclePosition() - moveDirection * betweenVehicleDistances,
+                        position = vehicleAgent.GetVehiclePosition() - moveDirection * betweenVehicleDistances * simulationSpaceMultiplier,
                         targetNodeName = vehicleAgent.GetCurrentTargetNodeName()
                     };
                     string content = Utils.CreateContent(SystemAction.CommunicationAgent_UpdateVehicleBehind, JsonUtility.ToJson(platoonUpdateData));
@@ -854,7 +856,7 @@ public class CommunicationAgent : Agent
             if (!setupStates.Contains(state)) // Is not in any setup state
             {
                 float distanceToCurrentTargetNode = Vector3.Distance(vehicleAgent.GetVehiclePosition(), vehicleAgent.GetCurrentTargetNodePosition());
-                if (distanceToCurrentTargetNode < reachDestinationRadius)
+                if (distanceToCurrentTargetNode < reachDestinationRadius * simulationSpaceMultiplier)
                 {
                     if (vehicleAgent.GetCurrentTargetNodeName() == vehicleAgent.GetDestinationNodeName()) // Reaching destination, leave platoon and end ride
                     {

@@ -118,7 +118,7 @@ public class Visualizer : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        Gizmos.DrawWireSphere(transform.position, communicationAgent.platoonJoinRadius);
+        Gizmos.DrawWireSphere(transform.position, communicationAgent.platoonJoinRadius * communicationAgent.simulationSpaceMultiplier);
 
         if (communicationAgent.target.HasValue)
         {
