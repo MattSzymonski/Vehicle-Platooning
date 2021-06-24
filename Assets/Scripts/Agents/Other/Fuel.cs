@@ -31,11 +31,11 @@ public class Fuel : MonoBehaviour
 		{
 			if (communicationAgent.isStrictlyInPlatoon)
 			{
-				airResistanceDropInFunctionOfDistanceBetweenVehiclesInPlatoon = (-Mathf.Log10(communicationAgent.betweenVehicleDistances + 1) * 25 + 68) / 100;
+				airResistanceDropInFunctionOfDistanceBetweenVehiclesInPlatoon = (-Mathf.Log10(communicationAgent.betweenVehicleDistances + 1.0f) * 25.0f + 68.0f) / 100.0f;
 			}
 			else
 			{
-				airResistanceDropInFunctionOfDistanceBetweenVehiclesInPlatoon = 1;
+				airResistanceDropInFunctionOfDistanceBetweenVehiclesInPlatoon = 1.0f;
 			}
 		}
 
@@ -45,6 +45,6 @@ public class Fuel : MonoBehaviour
 
 		currentConsumption = fuelConsumptionInFunctionOfSpeed * airResistanceDropInFunctionOfDistanceBetweenVehiclesInPlatoon;
 
-		totalFuelUsed += currentConsumption * (Time.deltaTime * 10); // Fuel used corrected by time between frames (so it is not dependent on frame rate of the sumulation
+		totalFuelUsed += currentConsumption * (Time.deltaTime * 10.0f); // Fuel used corrected by time between frames (so it is not dependent on frame rate of the sumulation
 	}
 }

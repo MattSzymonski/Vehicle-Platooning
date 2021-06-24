@@ -13,6 +13,13 @@ public class SpawningWave {
     public int vehiclesToSpawn;
 }
 
+public class SimulationModifiers
+{
+    public bool? platooningSystemEnabled = true;
+    public int? maxPlatoonSize;
+    public float? betweenVehicleDistances;
+};
+
 public class SimulationManager : MonoBehaviour
 {
     [Header("Info")]
@@ -23,7 +30,7 @@ public class SimulationManager : MonoBehaviour
     [ReadOnly] public float totalFuelUsed;
 
     int vehicleCount;
-    
+
     [Header("References")]
     public GameObject vehicleAgentPrefab;
     public GameObject centralAgentPrefab;
@@ -70,7 +77,7 @@ public class SimulationManager : MonoBehaviour
         {
             SimulatedSpawning_SpawnWave();
         }
-           
+
         SimulatedSpawning_ProcessSpawningWaves();
         SpawnAgentsManually();
         CalculateTotalFuelUsed();
@@ -113,6 +120,11 @@ public class SimulationManager : MonoBehaviour
 
     void SimulatedSpawning_ProcessSpawningWaves()
     {
+        SimulationModifiers simulationModifiers = new SimulationModifiers()
+        {
+            platooningSystemEnabled = true
+        };
+
         if (spawn_Timer > spawn_Timeout)
         {
             for (int i = spawningWaves.Count - 1; i >= 0; i--)
@@ -122,7 +134,7 @@ public class SimulationManager : MonoBehaviour
                     GameObject destinationNode = spawningWaves[i].startNode;
                     while (destinationNode == spawningWaves[i].startNode)
                         destinationNode = navSystem.nodes[Random.Range(minVehiclesInSpawningWave, navSystem.nodes.Count)];
-                    SpawnVehicle(spawningWaves[i].startNode, destinationNode, Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f)));
+                    SpawnVehicle(spawningWaves[i].startNode, destinationNode, Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f)), simulationModifiers);
                     spawningWaves[i].vehiclesToSpawn--;
                 }
                 else
@@ -155,11 +167,16 @@ public class SimulationManager : MonoBehaviour
         GameObject destinationNode = startNode;
         while (destinationNode == startNode)
             destinationNode = navSystem.nodes[Random.Range(0, navSystem.nodes.Count)];
+        
+        SimulationModifiers simulationModifiers = new SimulationModifiers()
+        {
+            platooningSystemEnabled = true
+        };
 
-        SpawnVehicle(startNode, destinationNode, Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f)));
+        SpawnVehicle(startNode, destinationNode, Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f)), simulationModifiers);
     }
 
-    void SpawnVehicle(GameObject startNode, GameObject destinationNode, float baseSpeed, bool platooningSystemEnabled = true)
+    void SpawnVehicle(GameObject startNode, GameObject destinationNode, float baseSpeed, SimulationModifiers simulationModifiers)
     {
         GameObject newVehicle = Instantiate(vehicleAgentPrefab, startNode.transform.position, Quaternion.identity);
         newVehicle.transform.parent = agentsParent.transform;
@@ -175,25 +192,36 @@ public class SimulationManager : MonoBehaviour
         vehicleAgent.SetUp(baseSpeed);
 
         // Setup CommunicationAgent
-        if (platooningSystemEnabled)
+
+
+        if (simulationModifiers.platooningSystemEnabled.Value)
         {
             var communicationAgent = newVehicle.GetComponent<CommunicationAgent>();
             communicationAgent.agentName = "CommunicationAgent_" + spawnedCount.ToString();
             communicationAgent.centralAgentName = "CentralAgent";
             communicationAgent.agentPlatform = agentPlatform;
+
+            communicationAgent.maxPlatoonSize = simulationModifiers.maxPlatoonSize.HasValue ? simulationModifiers.maxPlatoonSize.Value : communicationAgent.maxPlatoonSize;
+            communicationAgent.betweenVehicleDistances = simulationModifiers.betweenVehicleDistances.HasValue ? simulationModifiers.betweenVehicleDistances.Value : communicationAgent.betweenVehicleDistances;
         }
         else
         {
             Destroy(newVehicle.GetComponent<CommunicationAgent>());
         }
-
         spawnedCount++;
     }
+
+   
 
     void SpawnAgentsManually()
     {
         if (eventSystem.IsPointerOverGameObject())
             return;
+
+        SimulationModifiers simulationModifiers = new SimulationModifiers()
+        {
+            platooningSystemEnabled = true
+        };
 
         if (Input.GetMouseButtonDown(0))
         {
@@ -207,30 +235,33 @@ public class SimulationManager : MonoBehaviour
 
                 // Find closest node
                 var closestNode = navSystem.nodes.OrderBy(o => Vector3.Distance(o.transform.position, hit.point)).First();
-               
+
                 // Find other random node
                 GameObject destinationNode = closestNode;
                 while (destinationNode == closestNode)
                     destinationNode = navSystem.nodes[Random.Range(0, navSystem.nodes.Count)];
 
-                SpawnVehicle(closestNode, destinationNode, Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f)));
+                SpawnVehicle(closestNode, destinationNode, Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f)), simulationModifiers);
             }
         }
     }
 
-    public void SimulationSpeedUp()
+    public void SimulationSpeedUp(float increment)
     {
-        speedMultiplier = Mathf.Min(speedMultiplier + 0.5f, 10.0f);
+        speedMultiplier = Mathf.Min(speedMultiplier + increment, 50.0f);
         simulationSpeedText.text = speedMultiplier.ToString();
         Time.timeScale = speedMultiplier;
     }
 
-    public void SimulationSpeedDown()
+    public void SimulationSpeedDown(float decrement)
     {
-        speedMultiplier = Mathf.Max(0.0f, speedMultiplier - 0.5f);
+        speedMultiplier = Mathf.Max(0.0f, speedMultiplier - decrement);
         simulationSpeedText.text = speedMultiplier.ToString();
         Time.timeScale = speedMultiplier;
     }
+
+
+
 
     public void SpawnButtonToggle()
     {
@@ -238,16 +269,24 @@ public class SimulationManager : MonoBehaviour
         spawnButtonText.text = spawning ? "Stop" : "Start";
     }
 
+    // --------------------- SIMULATION ---------------------
+
     public void LaunchSimulationScenario(int index)
     {
         IEnumerator coroutine = null;
         switch (index)
         {
             case 1:
-                coroutine = SpawnScenario1();
+                coroutine = SpawnScenario1_1();
                 break;
             case 2:
-                coroutine = SpawnScenario2();
+                coroutine = SpawnScenario1_2();
+                break;
+            case 3:
+                coroutine = SpawnScenario2_1();
+                break;
+            case 4:
+                coroutine = SpawnScenario2_2();
                 break;
             default:
                 break;
@@ -255,50 +294,128 @@ public class SimulationManager : MonoBehaviour
         StartCoroutine(coroutine);
     }
 
-    IEnumerator SpawnScenario1()
+    IEnumerator SpawnScenario1_1()
     {
         // 3 agents start at node 1, form a platoon and move to node 7
         // 3 agents start at node 3, form a platoon, move to last common point which is node 4, two of them go to node 5 and one of them move to node 7
         // 1 agent start at node 2 move to node 1 where it joins platoon and move with it to node 4 and ends there
 
+        SimulationModifiers simulationModifiers = new SimulationModifiers()
+        {
+            platooningSystemEnabled = true,
+            maxPlatoonSize = 5,
+            betweenVehicleDistances = 10
+        };
+
         yield return new WaitForSeconds(0.0f);
-        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.5f));
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.5f), simulationModifiers);
         yield return new WaitForSeconds(0.5f);
-        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.6f));
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.6f), simulationModifiers);
         yield return new WaitForSeconds(0.7f);
-        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f));
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f), simulationModifiers);
 
         yield return new WaitForSeconds(0.5f);
-        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (3)"), navSystem.nodes.Find(o => o.name == "Node (5)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.5f));
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (3)"), navSystem.nodes.Find(o => o.name == "Node (5)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.5f), simulationModifiers);
         yield return new WaitForSeconds(1.0f);
-        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (3)"), navSystem.nodes.Find(o => o.name == "Node (5)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.6f));
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (3)"), navSystem.nodes.Find(o => o.name == "Node (5)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.6f), simulationModifiers);
         yield return new WaitForSeconds(1.5f);
-        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (3)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f));
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (3)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f), simulationModifiers);
 
         yield return new WaitForSeconds(1.0f);
-        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (2)"), navSystem.nodes.Find(o => o.name == "Node (4)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f));
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (2)"), navSystem.nodes.Find(o => o.name == "Node (4)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f), simulationModifiers);
     }
 
-    IEnumerator SpawnScenario2()
+    IEnumerator SpawnScenario1_2()
     {
         // Same as scenario 1 but with platooning system disabled
 
+        SimulationModifiers simulationModifiers = new SimulationModifiers()
+        {
+            platooningSystemEnabled = false
+        };
+
         yield return new WaitForSeconds(0.0f);
-        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.5f), false);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.5f), simulationModifiers);
         yield return new WaitForSeconds(0.5f);
-        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.6f), false);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.6f), simulationModifiers);
         yield return new WaitForSeconds(0.7f);
-        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f), false);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f), simulationModifiers);
 
         yield return new WaitForSeconds(0.5f);
-        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (3)"), navSystem.nodes.Find(o => o.name == "Node (5)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.5f), false);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (3)"), navSystem.nodes.Find(o => o.name == "Node (5)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.5f), simulationModifiers);
         yield return new WaitForSeconds(1.0f);
-        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (3)"), navSystem.nodes.Find(o => o.name == "Node (5)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.6f), false);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (3)"), navSystem.nodes.Find(o => o.name == "Node (5)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.6f), simulationModifiers);
         yield return new WaitForSeconds(1.5f);
-        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (3)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f), false);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (3)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f), simulationModifiers);
 
         yield return new WaitForSeconds(1.0f);
-        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (2)"), navSystem.nodes.Find(o => o.name == "Node (4)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f), false);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (2)"), navSystem.nodes.Find(o => o.name == "Node (4)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f), simulationModifiers);
     }
+
+
+    IEnumerator SpawnScenario2_1()
+    {
+        // 10 agents start at node 1, form different platoons and move to node 7
+
+        SimulationModifiers simulationModifiers = new SimulationModifiers()
+        {
+            platooningSystemEnabled = true,
+            maxPlatoonSize = 5,
+            betweenVehicleDistances = 10
+        };
+
+        yield return new WaitForSeconds(0.0f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.5f), simulationModifiers);
+        yield return new WaitForSeconds(0.5f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.6f), simulationModifiers);
+        yield return new WaitForSeconds(0.7f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f), simulationModifiers);
+        yield return new WaitForSeconds(0.1f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.5f), simulationModifiers);
+        yield return new WaitForSeconds(0.2f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.6f), simulationModifiers);
+        yield return new WaitForSeconds(0.3f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f), simulationModifiers);
+        yield return new WaitForSeconds(0.1f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.5f), simulationModifiers);
+        yield return new WaitForSeconds(0.1f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.6f), simulationModifiers);
+        yield return new WaitForSeconds(0.1f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f), simulationModifiers);
+        yield return new WaitForSeconds(0.1f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f), simulationModifiers);
+    }
+
+    IEnumerator SpawnScenario2_2()
+    {
+        // Same as scenario 1 but with platooning system disabled
+
+        SimulationModifiers simulationModifiers = new SimulationModifiers()
+        {
+            platooningSystemEnabled = false
+        };
+
+        yield return new WaitForSeconds(0.0f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.5f), simulationModifiers);
+        yield return new WaitForSeconds(0.5f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.6f), simulationModifiers);
+        yield return new WaitForSeconds(0.7f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f), simulationModifiers);
+        yield return new WaitForSeconds(0.1f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.5f), simulationModifiers);
+        yield return new WaitForSeconds(0.2f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.6f), simulationModifiers);
+        yield return new WaitForSeconds(0.3f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f), simulationModifiers);
+        yield return new WaitForSeconds(0.1f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.5f), simulationModifiers);
+        yield return new WaitForSeconds(0.1f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.6f), simulationModifiers);
+        yield return new WaitForSeconds(0.1f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f), simulationModifiers);
+        yield return new WaitForSeconds(0.1f);
+        SpawnVehicle(navSystem.nodes.Find(o => o.name == "Node (1)"), navSystem.nodes.Find(o => o.name == "Node (7)"), Mathf.Lerp(speedRange.x, speedRange.y, 0.7f), simulationModifiers);
+    }
+
 }
 

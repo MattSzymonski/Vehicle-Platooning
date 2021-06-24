@@ -29,7 +29,7 @@ public class VehicleAgent : MonoBehaviour
     [HideInInspector] public float simulationSpaceMultiplier = 0.01f; // To keep short distances in projection space and use real units in parameters we need to multiply real units by simulationSpace factor
                                                                       // So if eg. reachDestinationRadius is 10[meters] in simulation space (when displayed on the scene it is reachDestinationRadius * simulationSpaceMultiplier = 0.1
 
-    [HideInInspector] public float simulationSpeedMultiplier = 0.002f; // To keep speeds at reasonable levels fitted for visualization we need to muliply real units by simulationSpeed factor
+    [HideInInspector] public float simulationSpeedMultiplier = 0.01f; // = 0.002f; // To keep speeds at reasonable levels fitted for visualization we need to muliply real units by simulationSpeed factor
                                                                        // So if eg. baseSpeed is 100[km/h] in simulation space (when moving on the scene it is baseSpeed * simulationSpeedMultiplier = 0.2
 
     [ReadOnly] public VehicleAgentState state = VehicleAgentState.Idling;

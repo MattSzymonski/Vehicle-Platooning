@@ -63,8 +63,12 @@ public class CommunicationAgent : Agent
 
     List<(string, int)> platoonsInProximity; // Names of platoon leaders to join found when asking central agent, ordered on the stack from best to worst candidate in terms of most common nodes on the path (Name of leader and number of common points)
     List<string> lonelyVehiclesInProximity; // Names of communication agents not in platoons found when asking central agent
+    string lastTriedToJoinLeaderName = ""; // Name of leader of the column that this agent tried to join last time
+    bool lastTriedToJoin = false;
 
     [Header("Update Settings")]
+    public float mainTimerIncrement = 1.0f;
+
     public float registeringInCentralAgent_Wait_Timeout = 10.0f;
     float registeringInCentralAgent_Wait_Timer = 0.0f;
 
@@ -109,6 +113,7 @@ public class CommunicationAgent : Agent
         lonelyVehiclesInProximity = new List<string>();
 
         creatingPlatoonProposal_Wait_Timer = Random.Range(0.0f, creatingPlatoonProposal_Wait_Timeout); // Randomize timer starting point to avoid stagnation when multiple agents are created in the same time
+   
     }
 
     void Update() // Each frame
@@ -174,7 +179,7 @@ public class CommunicationAgent : Agent
             }
             else
             {
-                registeringInCentralAgent_Wait_Timer += Time.deltaTime;
+                registeringInCentralAgent_Wait_Timer += mainTimerIncrement * Time.deltaTime;
             }
         }
 
@@ -262,7 +267,7 @@ public class CommunicationAgent : Agent
             }
             else
             {
-                creatingPlatoonProposal_Wait_Timer += Time.deltaTime;
+                creatingPlatoonProposal_Wait_Timer += mainTimerIncrement * Time.deltaTime;
             }
         }
         // Reject all proposals (because now agent is in different state)
@@ -305,7 +310,7 @@ public class CommunicationAgent : Agent
             }
             else
             {
-                creatingPlatoonConfirmation_Wait_Timer += Time.deltaTime;
+                creatingPlatoonConfirmation_Wait_Timer += mainTimerIncrement * Time.deltaTime;
             }
         }
 
@@ -330,9 +335,9 @@ public class CommunicationAgent : Agent
 
                     DebugLog(platoonVehicleData.platoonLeaderCommunicationAgents.Count + " - " + platoonVehicleData.lonelyCommunicationAgents.Count);
 
-                    // If platoon found - try to join
+                    // If platoon found and last time agent tried to create column (not find it) - try to join
                     {
-                        if (platoonVehicleData.platoonLeaderCommunicationAgents.Count > 0)
+                        if (platoonVehicleData.platoonLeaderCommunicationAgents.Count > 0 && lastTriedToJoin == false)
                         {
                             // First find platoons that have the greatest number of common nodes with path of this agent and are going in the same direction
                             // Store them ordered in list, if list is not empty then call best agent, remove it from list and wait for response. 
@@ -371,6 +376,7 @@ public class CommunicationAgent : Agent
                             {
                                 platoonsInProximity.OrderBy(x => x.Item2); // Order list in terms of greatest number of common points
                                 state = CommunicationAgentState.JoiningPlatoon_Send;
+                                lastTriedToJoin = true;
                                 return;
                             }
                         }
@@ -383,7 +389,7 @@ public class CommunicationAgent : Agent
                         {
                             lonelyVehiclesInProximity = platoonVehicleData.lonelyCommunicationAgents.Select(x => x.name).ToList();  
                             state = CommunicationAgentState.CreatingPlatoon_Send;
-
+                            lastTriedToJoin = false;
                             return;
                         }
                     } 
@@ -398,15 +404,18 @@ public class CommunicationAgent : Agent
             }
             else
             {
-                platoonSearching_Wait_Timer += Time.deltaTime;
+                platoonSearching_Wait_Timer += mainTimerIncrement * Time.deltaTime;
             }
         }
 
         // Send join request to the best platoon candidate from list and remove it from list
         if (state == CommunicationAgentState.JoiningPlatoon_Send)
         {
+            //string platoonLeaderName = platoonsInProximity.Where(o => o.Item1 != lastTriedToJoinLeaderName).First().Item1;
             string platoonLeaderName = platoonsInProximity[platoonsInProximity.Count - 1].Item1;
             platoonsInProximity.RemoveAt(platoonsInProximity.Count - 1);
+
+            //lastTriedToJoinLeaderName = platoonLeaderName;
 
             // Send request to join the platoon
             string content = Utils.CreateContent(SystemAction.CommunicationAgent_JoinPlatoon, "");
@@ -461,7 +470,7 @@ public class CommunicationAgent : Agent
             }
             else
             {
-                joiningPlatoon_Wait_Timer += Time.deltaTime;
+                joiningPlatoon_Wait_Timer += mainTimerIncrement * Time.deltaTime;
             }       
         }
 
@@ -552,7 +561,7 @@ public class CommunicationAgent : Agent
             }
             else
             {
-                creatingPlatoon_Wait_Timer += Time.deltaTime;
+                creatingPlatoon_Wait_Timer += mainTimerIncrement * Time.deltaTime;
             }
         }
 
@@ -816,7 +825,7 @@ public class CommunicationAgent : Agent
             }
             else
             {
-                updateVehicleBehind_Timer += Time.deltaTime;
+                updateVehicleBehind_Timer += mainTimerIncrement * Time.deltaTime;
             }
 
         }
@@ -846,7 +855,7 @@ public class CommunicationAgent : Agent
                 }
                 else
                 {
-                    updateVehicleDataInCentralAgent_Timer += Time.deltaTime;
+                    updateVehicleDataInCentralAgent_Timer += mainTimerIncrement * Time.deltaTime;
                 }
             }
         }

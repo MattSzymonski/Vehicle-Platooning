@@ -107,11 +107,12 @@ MonoBehaviour:
   maxPlatoonSize: 5
   vehicleAgentName: 
   vehicleAgentPassword: 
+  mainTimerIncrement: 1
   registeringInCentralAgent_Wait_Timeout: 10
   platoonSearching_Wait_Timeout: 1.3
   joiningPlatoon_Wait_Timeout: 1
   creatingPlatoon_Wait_Timeout: 0.8
-  creatingPlatoonProposal_Wait_Timeout: 1
+  creatingPlatoonProposal_Wait_Timeout: 2
   creatingPlatoonConfirmation_Wait_Timeout: 1
   updateVehicleDataInCentralAgent_Timeout: 1
   updateVehicleBehind_Timeout: 0.4
@@ -129,9 +130,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentConsumption: 0
   airResistanceDropInFunctionOfDistanceBetweenVehiclesInPlatoon: 1
+  fuelConsumptionInFunctionOfSpeed: 0
   totalFuelUsed: 0
-  distanceBetweenVehiclesInPlatoon: 1
-  xxx: 0
 --- !u!1 &3163854421694993006
 GameObject:
   m_ObjectHideFlags: 0
