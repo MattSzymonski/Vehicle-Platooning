@@ -7,6 +7,7 @@ using UnityEngine;
 public class AgentPlatform : MonoBehaviour
 {
     public Dictionary<string, Agent> registeredAgents;
+    public List<string> registeredAgentsNames;
 
     void Start()
     {
@@ -16,12 +17,15 @@ public class AgentPlatform : MonoBehaviour
     public (bool, AgentPlatform) RegisterAgent(string agentName, Agent agent)
     {
         registeredAgents.Add(agentName, agent);
+        registeredAgentsNames.Add(agentName);
         return (true, this);
     }
 
     public bool DeregisterAgent(string agentName)
     {
         registeredAgents.Remove(agentName);
+        registeredAgentsNames.Remove(agentName);
+        //Debug.Log("Deregistered" + agentName);
         return true;
     }
 

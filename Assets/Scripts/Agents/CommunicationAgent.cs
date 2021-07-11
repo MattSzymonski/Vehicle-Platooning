@@ -164,7 +164,6 @@ public class CommunicationAgent : Agent
                 else if (message.GetPerformative() == nameof(Peformative.Reject))
                 {
                     state = CommunicationAgentState.RegisteringInCentralAgent_Send; // Try once again
-
                     return;
                 }
             }
@@ -188,7 +187,6 @@ public class CommunicationAgent : Agent
         {
             ConnectToVehicleAgent(vehicleAgentName, vehicleAgentPassword);
             state = CommunicationAgentState.CentralAgentInitialDataUpdate_Send;
-
             return;
         }
 
@@ -896,6 +894,7 @@ public class CommunicationAgent : Agent
 
                         // Deregister agent in Agent Platform
                         {
+                            //Debug.Log("Deregister" + agentName);
                             base.DeregisterInAgentPlatform();
                         }
 

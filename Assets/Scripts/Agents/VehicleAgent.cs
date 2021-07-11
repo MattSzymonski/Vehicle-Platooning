@@ -89,10 +89,10 @@ public class VehicleAgent : MonoBehaviour
                     }
                     else // Reached destination
                     {
-                        if (!communicationAgent) // This is only for simulation
+                        if (state == VehicleAgentState.SelfGuidedMoving)
                         {
                             EndRide();
-                        }  
+                        }
                     }
                 }
 
@@ -138,7 +138,7 @@ public class VehicleAgent : MonoBehaviour
     // --- API ---
 
     public void ToggleSystemGuidedMode(bool status)
-    {
+    { 
         if (status)
         {
             currentSpeed = systemSpeed;

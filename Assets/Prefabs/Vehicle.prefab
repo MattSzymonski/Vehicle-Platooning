@@ -96,7 +96,7 @@ MonoBehaviour:
   followingAgentTargetNodeName: 
   lastCommonPlatoonNodeName: 
   platoonVehiclesNames: []
-  platoonJoinRadius: 100
+  platoonJoinRadius: 200
   reachDestinationRadius: 10
   centralAgentName: CentralAgent
   platoonSpeed: 100
