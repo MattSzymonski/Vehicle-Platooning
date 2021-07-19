@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-
+using System.IO;
 [System.Serializable]
 public class SpawningWave {
     public GameObject startNode;
@@ -48,7 +48,18 @@ public class SimulationManager : MonoBehaviour
 
     [Header("Vehicle Agent Settings")]
     [MinMaxSlider(20.0f, 200.0f)] public Vector2 speedRange = new Vector2(70.0f, 120.0f);
+    int[][] neighbours =
+    {
+    new int[] { 2, 3, 4},
+    new int[] { 1, 5, 6 },
+    new int[] { 1 }, 
+    new int[] { 1, 5, 7 },
+    new int[] { 2, 4, 7 },
+    new int[] { 2 },
+    new int[] { 4, 5 },
 
+    };
+    float speed = 100.0f;
     [Header("Spawning Settings")]
     public int minVehiclesInSpawningWave = 1;
     public int maxVehiclesInSpawningWave = 4;
@@ -67,6 +78,7 @@ public class SimulationManager : MonoBehaviour
         eventSystem = GameObject.Find("EventSystem").GetComponent<EventSystem>();
         Time.timeScale = speedMultiplier;
         spawningWaves = new List<SpawningWave>();
+        
         SpawnCentralAgent();
     }
 
@@ -324,31 +336,33 @@ public class SimulationManager : MonoBehaviour
         yield return new WaitForSeconds(0.0f);
         Debug.Log("Spawning Wave 1...");
         int i = 0;
-        for (; i < 10; i++)
-        {
-            GameObject startNode = navSystem.nodes[startNodes[i]];
-            GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
-
-            SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
-        }
-        yield return new WaitForSeconds(2.0f);
-        Debug.Log("Spawning Wave 2...");
         for (; i < 25; i++)
         {
             GameObject startNode = navSystem.nodes[startNodes[i]];
             GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
+            float waitTime =0.5f;
+            
+            yield return new WaitForSeconds(waitTime);
+            
 
             SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
+            
         }
-        Debug.Log("Waiting for all agents reaching target...");
-        yield return new WaitUntil(() => agentPlatform.registeredAgents.Count <= 1);
-        Debug.Log("Scenario finished");
-        startNodes = new List<int>();
-        endNodes = new List<int>();
+        // yield return new WaitForSeconds(1.5f);
+        // Debug.Log("Spawning Wave 2...");
+        // for (; i < 25; i++)
+        // {
+        //     GameObject startNode = navSystem.nodes[startNodes[i]];
+        //     GameObject destinationNode = navSystem.nodes[endNodes[i]];
+            
+        //     yield return new WaitForSeconds(1.0f);
+        //     SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
+        // }
+        // Debug.Log("Waiting for all agents reaching target...");
+        // yield return new WaitUntil(() => agentPlatform.registeredAgents.Count <= 1);
+        // Debug.Log("Scenario finished");
+        // startNodes = new List<int>();
+        // endNodes = new List<int>();
 
         // 3 agents start at node 1, form a platoon and move to node 7
         // 3 agents start at node 3, form a platoon, move to last common point which is node 4, two of them go to node 5 and one of them move to node 7
@@ -381,46 +395,73 @@ public class SimulationManager : MonoBehaviour
 
     IEnumerator SpawnScenario1_2()
     {
-        speedMultiplier = 1;
+        speedMultiplier = 9;
         simulationSpeedText.text = speedMultiplier.ToString();
         Time.timeScale = speedMultiplier;
 
         SimulationModifiers simulationModifiers = new SimulationModifiers()
         {
             platooningSystemEnabled = false,
-            maxPlatoonSize = 6,
-            betweenVehicleDistances = 10
+            
         };
 
-        AssignStartingAndDestinationNodes(25);
+        FromStringFileToList();
         yield return new WaitForSeconds(0.0f);
         Debug.Log("Spawning Wave 1...");
         int i = 0;
-        for (; i < 10; i++)
-        {
-            GameObject startNode = navSystem.nodes[startNodes[i]];
-            GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
-
-            SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
-        }
-        yield return new WaitForSeconds(2.0f);
-        Debug.Log("Spawning Wave 2...");
+  
         for (; i < 25; i++)
         {
             GameObject startNode = navSystem.nodes[startNodes[i]];
             GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
+            float waitTime =0.5f;
+            
+            yield return new WaitForSeconds(waitTime);
+            
 
             SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
+            
         }
-        Debug.Log("Waiting for all agents reaching target...");
-        yield return new WaitUntil(() => agentPlatform.registeredAgents.Count <= 1);
-        Debug.Log("Scenario finished");
-        startNodes = new List<int>();
-        endNodes = new List<int>();
+        // speedMultiplier = 9;
+        // simulationSpeedText.text = speedMultiplier.ToString();
+        // Time.timeScale = speedMultiplier;
+
+        // SimulationModifiers simulationModifiers = new SimulationModifiers()
+        // {
+        //     platooningSystemEnabled = false,
+        //     
+        // };
+
+        // FromStringFileToList();
+        
+        // yield return new WaitForSeconds(0.0f);
+        // Debug.Log("Spawning Wave 1...");
+        // int i = 0;
+        // for (; i < 10; i++)
+        // {
+        //     GameObject startNode = navSystem.nodes[startNodes[i]];
+        //     GameObject destinationNode = navSystem.nodes[endNodes[i]];
+        //     //float speed = 1.0f;
+
+        //     SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
+        //     yield return new WaitForSeconds(0.2f);
+        // }
+        // yield return new WaitForSeconds(2.0f);
+        // Debug.Log("Spawning Wave 2...");
+        // for (; i < 25; i++)
+        // {
+        //     GameObject startNode = navSystem.nodes[startNodes[i]];
+        //     GameObject destinationNode = navSystem.nodes[endNodes[i]];
+        //     //float speed = 1.0f;
+
+        //     SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
+        //     yield return new WaitForSeconds(0.2f);
+        // }
+        // Debug.Log("Waiting for all agents reaching target...");
+        // yield return new WaitUntil(() => agentPlatform.registeredAgents.Count <= 1);
+        // Debug.Log("Scenario finished");
+        // startNodes = new List<int>();
+        // endNodes = new List<int>();
         // Same as scenario 1 but with platooning system disabled
 
         // SimulationModifiers simulationModifiers = new SimulationModifiers()
@@ -464,51 +505,31 @@ public class SimulationManager : MonoBehaviour
         yield return new WaitForSeconds(0.0f);
         Debug.Log("Spawning Wave 1...");
         int i = 0;
-        for (; i < 15; i++)
-        {
-            GameObject startNode = navSystem.nodes[startNodes[i]];
-            GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
-
-            SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
-        }
-        yield return new WaitForSeconds(1.0f);
         for (; i < 25; i++)
         {
             GameObject startNode = navSystem.nodes[startNodes[i]];
             GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
+            float waitTime =0.5f;
+            
+            yield return new WaitForSeconds(waitTime);
+            
 
             SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
+            
         }
-        yield return new WaitForSeconds(1.0f);
-        for (; i < 35; i++)
+        yield return new WaitForSeconds(0.5f);
+         for (; i < 50; i++)
         {
             GameObject startNode = navSystem.nodes[startNodes[i]];
             GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
+            float waitTime =0.5f;
+            
+            yield return new WaitForSeconds(waitTime);
+            
 
             SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
         }
-        yield return new WaitForSeconds(1.0f);
-        Debug.Log("Spawning Wave 2...");
-        for (; i < 50; i++)
-        {
-            GameObject startNode = navSystem.nodes[startNodes[i]];
-            GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
-
-            SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
-        }
-        Debug.Log("Waiting for all agents reaching target...");
-        yield return new WaitUntil(() => agentPlatform.registeredAgents.Count <= 1);
-        Debug.Log("Scenario finished");
-        startNodes = new List<int>();
-        endNodes = new List<int>();
+            
         // // 10 agents start at node 1, form different platoons and move to node 7
 
         // SimulationModifiers simulationModifiers = new SimulationModifiers()
@@ -542,7 +563,7 @@ public class SimulationManager : MonoBehaviour
 
     IEnumerator SpawnScenario2_2()
     {
-        speedMultiplier = 1;
+        speedMultiplier = 9;
         simulationSpeedText.text = speedMultiplier.ToString();
         Time.timeScale = speedMultiplier;
 
@@ -553,55 +574,35 @@ public class SimulationManager : MonoBehaviour
             betweenVehicleDistances = 10
         };
 
-        AssignStartingAndDestinationNodes(50);
+        FromStringFileToList();
         yield return new WaitForSeconds(0.0f);
         Debug.Log("Spawning Wave 1...");
         int i = 0;
-        for (; i < 15; i++)
-        {
-            GameObject startNode = navSystem.nodes[startNodes[i]];
-            GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
-
-            SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
-        }
-        yield return new WaitForSeconds(1.0f);
         for (; i < 25; i++)
         {
             GameObject startNode = navSystem.nodes[startNodes[i]];
             GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
+            float waitTime =0.5f;
+            
+            yield return new WaitForSeconds(waitTime);
+            
 
             SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
+            
         }
-        yield return new WaitForSeconds(1.0f);
-        for (; i < 35; i++)
+        yield return new WaitForSeconds(0.5f);
+         for (; i < 50; i++)
         {
             GameObject startNode = navSystem.nodes[startNodes[i]];
             GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
+            float waitTime =0.5f;
+            
+            yield return new WaitForSeconds(waitTime);
+            
 
             SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
         }
-        yield return new WaitForSeconds(1.0f);
-        Debug.Log("Spawning Wave 2...");
-        for (; i < 50; i++)
-        {
-            GameObject startNode = navSystem.nodes[startNodes[i]];
-            GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
-
-            SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
-        }
-        Debug.Log("Waiting for all agents reaching target...");
-        yield return new WaitUntil(() => agentPlatform.registeredAgents.Count <= 1);
-        Debug.Log("Scenario finished");
-        startNodes = new List<int>();
-        endNodes = new List<int>();
+        
         // Same as scenario 1 but with platooning system disabled
 
         // SimulationModifiers simulationModifiers = new SimulationModifiers()
@@ -634,7 +635,7 @@ public class SimulationManager : MonoBehaviour
 
     IEnumerator SpawnScenario3_1()
     {
-        speedMultiplier = 1;
+        speedMultiplier = 9;
         simulationSpeedText.text = speedMultiplier.ToString();
         Time.timeScale = speedMultiplier;
 
@@ -649,80 +650,57 @@ public class SimulationManager : MonoBehaviour
         yield return new WaitForSeconds(0.0f);
         Debug.Log("Spawning Wave 1...");
         int i = 0;
-        for (; i < 15; i++)
+        for (; i < 25; i++)
         {
             GameObject startNode = navSystem.nodes[startNodes[i]];
             GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
+            float waitTime =0.5f;
+            
+            yield return new WaitForSeconds(waitTime);
+            
 
             SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
+            
         }
-        yield return new WaitForSeconds(1.0f);
-        for (; i < 30; i++)
+        yield return new WaitForSeconds(0.5f);
+         for (; i < 50; i++)
         {
             GameObject startNode = navSystem.nodes[startNodes[i]];
             GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
+            float waitTime =0.5f;
+            
+            yield return new WaitForSeconds(waitTime);
+            
 
             SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
         }
-        yield return new WaitForSeconds(1.0f);
-        for (; i < 45; i++)
+        yield return new WaitForSeconds(0.5f);
+        
+        for (; i < 75; i++)
         {
             GameObject startNode = navSystem.nodes[startNodes[i]];
             GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
+            float waitTime =0.5f;
+            
+            yield return new WaitForSeconds(waitTime);
+            
 
             SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
+            
         }
-        yield return new WaitForSeconds(1.0f);
-        for (; i < 60; i++)
+        yield return new WaitForSeconds(0.5f);
+         for (; i < 100; i++)
         {
             GameObject startNode = navSystem.nodes[startNodes[i]];
             GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
+            float waitTime =0.5f;
+            
+            yield return new WaitForSeconds(waitTime);
+            
 
             SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
         }
-        yield return new WaitForSeconds(1.0f);
-        for (; i < 65; i++)
-        {
-            GameObject startNode = navSystem.nodes[startNodes[i]];
-            GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
-
-            SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
-        }
-        yield return new WaitForSeconds(1.0f);
-        for (; i < 80; i++)
-        {
-            GameObject startNode = navSystem.nodes[startNodes[i]];
-            GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
-
-            SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
-        }
-        yield return new WaitForSeconds(1.0f);
-        for (; i < 100; i++)
-        {
-            GameObject startNode = navSystem.nodes[startNodes[i]];
-            GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
-
-            SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
-        }
-        Debug.Log("Waiting for all agents reaching target...");
-        yield return new WaitUntil(() => agentPlatform.registeredAgents.Count <= 1);
-        Debug.Log("Scenario finished");
-        startNodes = new List<int>();
-        endNodes = new List<int>();
+        
         // speedMultiplier = 9;
         // simulationSpeedText.text = speedMultiplier.ToString();
         // Time.timeScale = speedMultiplier;
@@ -787,7 +765,7 @@ public class SimulationManager : MonoBehaviour
 
     IEnumerator SpawnScenario3_2()
     {
-       speedMultiplier = 1;
+        speedMultiplier = 9;
         simulationSpeedText.text = speedMultiplier.ToString();
         Time.timeScale = speedMultiplier;
 
@@ -798,84 +776,62 @@ public class SimulationManager : MonoBehaviour
             betweenVehicleDistances = 10
         };
 
-        AssignStartingAndDestinationNodes(100);
+        FromStringFileToList();
         yield return new WaitForSeconds(0.0f);
         Debug.Log("Spawning Wave 1...");
         int i = 0;
-        for (; i < 15; i++)
+        for (; i < 25; i++)
         {
             GameObject startNode = navSystem.nodes[startNodes[i]];
             GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
+            float waitTime =0.5f;
+            
+            yield return new WaitForSeconds(waitTime);
+            
 
             SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
+            
         }
-        yield return new WaitForSeconds(1.0f);
-        for (; i < 30; i++)
+        yield return new WaitForSeconds(0.5f);
+         for (; i < 50; i++)
         {
             GameObject startNode = navSystem.nodes[startNodes[i]];
             GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
+            float waitTime =0.5f;
+            
+            yield return new WaitForSeconds(waitTime);
+            
 
             SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
         }
-        yield return new WaitForSeconds(1.0f);
-        for (; i < 45; i++)
+        yield return new WaitForSeconds(0.5f);
+        
+        for (; i < 75; i++)
         {
             GameObject startNode = navSystem.nodes[startNodes[i]];
             GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
+            float waitTime =0.5f;
+            
+            yield return new WaitForSeconds(waitTime);
+            
 
             SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
+            
         }
-        yield return new WaitForSeconds(1.0f);
-        for (; i < 60; i++)
+        yield return new WaitForSeconds(0.5f);
+         for (; i < 100; i++)
         {
             GameObject startNode = navSystem.nodes[startNodes[i]];
             GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
+            float waitTime =0.5f;
+            
+            yield return new WaitForSeconds(waitTime);
+            
 
             SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
         }
-        yield return new WaitForSeconds(1.0f);
-        for (; i < 65; i++)
-        {
-            GameObject startNode = navSystem.nodes[startNodes[i]];
-            GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
-
-            SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
-        }
-        yield return new WaitForSeconds(1.0f);
-        for (; i < 80; i++)
-        {
-            GameObject startNode = navSystem.nodes[startNodes[i]];
-            GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
-
-            SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
-        }
-        yield return new WaitForSeconds(1.0f);
-        for (; i < 100; i++)
-        {
-            GameObject startNode = navSystem.nodes[startNodes[i]];
-            GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float speed = Mathf.Lerp(speedRange.x, speedRange.y, Random.Range(0.0f, 1.0f));
-
-            SpawnVehicle(startNode, destinationNode, speed, simulationModifiers);
-            yield return new WaitForSeconds(0.2f);
-        }
-        Debug.Log("Waiting for all agents reaching target...");
-        yield return new WaitUntil(() => agentPlatform.registeredAgents.Count <= 1);
-        Debug.Log("Scenario finished");
-        startNodes = new List<int>();
-        endNodes = new List<int>();
+       
+        
     //     speedMultiplier = 9;
     //     simulationSpeedText.text = speedMultiplier.ToString();
     //     Time.timeScale = speedMultiplier;
@@ -937,6 +893,35 @@ public class SimulationManager : MonoBehaviour
     //     yield return new WaitUntil(() => agentPlatform.registeredAgents.Count <= 1);
     //     Debug.Log("Scenario finished");
     }
+    List<string> NumListToStringList(List<int> tmpNodes)
+    {
+        var listOfText = new List<string>();
+        foreach(var num in tmpNodes)
+        {
+            listOfText.Add(num.ToString());
+        }
+        return listOfText;
+    }
+    void FromStringFileToList()
+    {
+        var startPath = "/Users/michal/Desktop/UnityAgentTest/StartNodes.txt";
+        var endPath = "/Users/michal/Desktop/UnityAgentTest/EndNodes.txt";
+
+        
+        string[] startText = File.ReadAllLines(startPath);
+        foreach (string s in startText)
+        {
+            int x = int.Parse(s);
+            startNodes.Add(x);
+        }
+        string[] endText = File.ReadAllLines(endPath);
+        foreach (string s in endText)
+        {
+            int x = int.Parse(s);
+            endNodes.Add(x);
+        }
+
+    }
     void AssignStartingAndDestinationNodes(int numberOfAgents)
     {
         
@@ -944,16 +929,21 @@ public class SimulationManager : MonoBehaviour
         {
             int startNode = Random.Range(0, navSystem.nodes.Count);
             int destinationNode = Random.Range(0, navSystem.nodes.Count);
-            while (destinationNode == startNode)
+            while (destinationNode == startNode || neighbours[startNode].Contains(destinationNode+1))
                 destinationNode = Random.Range(0, navSystem.nodes.Count);
             startNodes.Add(startNode);
             endNodes.Add(destinationNode);
 
             
         }
-
+        var tmpStartOfStrings = NumListToStringList(startNodes);
+        var tmpEndOfStrings = NumListToStringList(endNodes);       
+        System.IO.File.WriteAllLines(@"/Users/michal/Desktop/UnityAgentTest/StartNodes.txt", tmpStartOfStrings);
+        System.IO.File.WriteAllLines(@"/Users/michal/Desktop/UnityAgentTest/EndNodes.txt", tmpEndOfStrings);
+        
         
     }
+    
    
 
 
