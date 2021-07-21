@@ -45,6 +45,7 @@ public class SimulationManager : MonoBehaviour
     public Text agentsCountText;
     public Text spawnButtonText;
     public Text fuelUsedText;
+    public InputField agentsInputField;
 
     [Header("Vehicle Agent Settings")]
     [MinMaxSlider(20.0f, 200.0f)] public Vector2 speedRange = new Vector2(70.0f, 120.0f);
