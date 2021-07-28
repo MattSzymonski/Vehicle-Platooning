@@ -30,8 +30,11 @@ public class Fuel : MonoBehaviour
 		else // Drafting (behind other vehicle)
 		{
 			if (communicationAgent.isStrictlyInPlatoon)
-			{
+			{		
 				airResistanceDropInFunctionOfDistanceBetweenVehiclesInPlatoon = (-Mathf.Log10(communicationAgent.betweenVehicleDistances + 1.0f) * 25.0f + 68.0f) / 100.0f;
+				
+				int orderInPlatoon = communicationAgent.platoonVehiclesNames.IndexOf(communicationAgent.name);
+				airResistanceDropInFunctionOfDistanceBetweenVehiclesInPlatoon = airResistanceDropInFunctionOfDistanceBetweenVehiclesInPlatoon - (0.05f * (orderInPlatoon - 1));
 			}
 			else
 			{
@@ -43,7 +46,7 @@ public class Fuel : MonoBehaviour
 		// https://www.researchgate.net/publication/311703927_Urban_Transportation_Solutions_for_the_CO2_Emissions_Reduction_Contributions Figure 4
 		fuelConsumptionInFunctionOfSpeed = 0.0019f * Mathf.Pow(vehicleAgent.currentSpeed, 2) - 0.2506f * vehicleAgent.currentSpeed + 13.74f; // For 100% air resistance
 
-		currentConsumption = fuelConsumptionInFunctionOfSpeed * airResistanceDropInFunctionOfDistanceBetweenVehiclesInPlatoon;
+		currentConsumption = fuelConsumptionInFunctionOfSpeed - (fuelConsumptionInFunctionOfSpeed * airResistanceDropInFunctionOfDistanceBetweenVehiclesInPlatoon);
 
 		totalFuelUsed += currentConsumption * (Time.deltaTime * 10.0f); // Fuel used corrected by time between frames (so it is not dependent on frame rate of the sumulation
 	}

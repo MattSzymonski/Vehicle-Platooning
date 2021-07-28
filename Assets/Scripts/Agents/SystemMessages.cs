@@ -66,6 +66,7 @@ public class PlatoonUpdateData // For interplatoon communication (communicationA
 {
     public Vector3 position;
     public string targetNodeName;
+    public List<string> platoonVehiclesNames;
 }
 
 

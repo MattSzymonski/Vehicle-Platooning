@@ -693,11 +693,10 @@ public class CommunicationAgent : Agent
                 {
                     if (message.GetPerformative() == Peformative.Inform.ToString())
                     {
-                       
-
                         PlatoonUpdateData platoonUpdateData = JsonUtility.FromJson<PlatoonUpdateData>(receiveContent.contentDetails);
                         target = platoonUpdateData.position;
                         followingAgentTargetNodeName = platoonUpdateData.targetNodeName;
+                        platoonVehiclesNames = platoonUpdateData.platoonVehiclesNames;
 
                         DebugLog("Up Received " + platoonUpdateData.targetNodeName);
 
@@ -811,7 +810,8 @@ public class CommunicationAgent : Agent
                     PlatoonUpdateData platoonUpdateData = new PlatoonUpdateData()
                     {
                         position = vehicleAgent.GetVehiclePosition() - moveDirection * betweenVehicleDistances * simulationSpaceMultiplier,
-                        targetNodeName = vehicleAgent.GetCurrentTargetNodeName()
+                        targetNodeName = vehicleAgent.GetCurrentTargetNodeName(),
+                        platoonVehiclesNames = this.platoonVehiclesNames
                     };
                     string content = Utils.CreateContent(SystemAction.CommunicationAgent_UpdateVehicleBehind, JsonUtility.ToJson(platoonUpdateData));
                     base.SendMessage(Peformative.Inform.ToString(), content, agentName, currentPlatoonData.behindAgentName);
