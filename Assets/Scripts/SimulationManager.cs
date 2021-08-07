@@ -79,7 +79,6 @@ public class SimulationManager : MonoBehaviour
         eventSystem = GameObject.Find("EventSystem").GetComponent<EventSystem>();
         Time.timeScale = speedMultiplier;
         spawningWaves = new List<SpawningWave>();
-        
         SpawnCentralAgent();
     }
 
@@ -448,20 +447,22 @@ public class SimulationManager : MonoBehaviour
         speedMultiplier = 1;
         simulationSpeedText.text = speedMultiplier.ToString();
         Time.timeScale = speedMultiplier;
-
+        var numberOfAgents = System.Int32.Parse(agentsInputField.text);
         SimulationModifiers simulationModifiers = new SimulationModifiers()
         {
             platooningSystemEnabled = true,
             maxPlatoonSize = 3,
             betweenVehicleDistances = 15
         };
-
-        AssignStartingAndDestinationNodes(100);
+        if(numberOfAgents<100)
+            AssignStartingAndDestinationNodes(100);
+        else 
+            AssignStartingAndDestinationNodes(numberOfAgents);
         yield return new WaitForSeconds(0.0f);
         Debug.Log("Spawning Wave 1...");
         int i = 0;
       
-        for (; i < 20; i++)
+        for (; i < numberOfAgents; i++)
         {
             GameObject startNode = navSystem.nodes[startNodes[i]];
             GameObject destinationNode = navSystem.nodes[endNodes[i]];
@@ -483,7 +484,7 @@ public class SimulationManager : MonoBehaviour
         speedMultiplier = 9;
         simulationSpeedText.text = speedMultiplier.ToString();
         Time.timeScale = speedMultiplier;
-
+        var numberOfAgents = System.Int32.Parse(agentsInputField.text);
         SimulationModifiers simulationModifiers = new SimulationModifiers()
         {
             platooningSystemEnabled = false,
@@ -494,7 +495,7 @@ public class SimulationManager : MonoBehaviour
         yield return new WaitForSeconds(0.0f);
         Debug.Log("Spawning Wave 1...");
         int i = 0;
-        for (; i < 20; i++)
+        for (; i < numberOfAgents; i++)
         {
             GameObject startNode = navSystem.nodes[startNodes[i]];
             GameObject destinationNode = navSystem.nodes[endNodes[i]];
