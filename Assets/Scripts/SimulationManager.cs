@@ -45,7 +45,10 @@ public class SimulationManager : MonoBehaviour
     public Text agentsCountText;
     public Text spawnButtonText;
     public Text fuelUsedText;
-    public InputField agentsInputField;
+
+    public InputField agentCountInputField;
+    public InputField distanceBetweenVehiclesInputField;
+    public InputField maxNumberOfAgentsInPlatoonsInputField;
 
     [Header("Vehicle Agent Settings")]
     [MinMaxSlider(20.0f, 200.0f)] public Vector2 speedRange = new Vector2(70.0f, 120.0f);
@@ -447,12 +450,12 @@ public class SimulationManager : MonoBehaviour
         speedMultiplier = 1;
         simulationSpeedText.text = speedMultiplier.ToString();
         Time.timeScale = speedMultiplier;
-        var numberOfAgents = System.Int32.Parse(agentsInputField.text);
+        var numberOfAgents = System.Int32.Parse(agentCountInputField.text);
         SimulationModifiers simulationModifiers = new SimulationModifiers()
         {
             platooningSystemEnabled = true,
-            maxPlatoonSize = 3,
-            betweenVehicleDistances = 15
+            maxPlatoonSize = System.Int32.Parse(maxNumberOfAgentsInPlatoonsInputField.text), // 3
+            betweenVehicleDistances = System.Int32.Parse(distanceBetweenVehiclesInputField.text) // 15
         };
         if(numberOfAgents<100)
             AssignStartingAndDestinationNodes(100);
@@ -466,7 +469,7 @@ public class SimulationManager : MonoBehaviour
         {
             GameObject startNode = navSystem.nodes[startNodes[i]];
             GameObject destinationNode = navSystem.nodes[endNodes[i]];
-            float waitTime =0.5f;
+            float waitTime = 0.5f;
             
             yield return new WaitForSeconds(waitTime);
             
@@ -484,11 +487,12 @@ public class SimulationManager : MonoBehaviour
         speedMultiplier = 9;
         simulationSpeedText.text = speedMultiplier.ToString();
         Time.timeScale = speedMultiplier;
-        var numberOfAgents = System.Int32.Parse(agentsInputField.text);
+        var numberOfAgents = System.Int32.Parse(agentCountInputField.text);
         SimulationModifiers simulationModifiers = new SimulationModifiers()
         {
             platooningSystemEnabled = false,
-            
+            maxPlatoonSize = System.Int32.Parse(maxNumberOfAgentsInPlatoonsInputField.text), // 5
+            betweenVehicleDistances = System.Int32.Parse(distanceBetweenVehiclesInputField.text) // 10
         };
 
         FromStringFileToList();
